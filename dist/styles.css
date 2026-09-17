@@ -10,3 +10,5 @@
 .reading-shelf:first-child h3{color:var(--accent)}
 .reading-shelf .reading-empty{margin:0;color:var(--muted);font-size:1rem}
 @media(max-width:540px){.header{height:auto;flex-wrap:wrap;padding-top:23px;padding-bottom:20px;gap:16px}.header nav{order:3;width:100%;justify-content:space-between;gap:12px;flex-wrap:wrap}.header button{margin-left:auto}}
+
+.hero-bio{max-width:470px}.hero-socials{margin-top:24px;flex-wrap:wrap;font-size:1rem}
