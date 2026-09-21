@@ -64,17 +64,28 @@ if (bookTrack) {
   updateBookControls();
 }
 
-const photoStory = document.getElementById('profile-photo-story');
-if (photoStory) {
-  document.querySelectorAll('[data-photo-open]').forEach(link => {
-    link.addEventListener('click', event => {
-      event.preventDefault();
-      photoStory.showModal();
+document.querySelectorAll('.photo-deck').forEach(photoDeck => {
+  const cards = [...photoDeck.querySelectorAll('.photo-card')];
+  const dots = [...photoDeck.querySelectorAll('[data-photo-index]')];
+  let current = 0;
+  function showPhoto(index) {
+    current = (index + cards.length) % cards.length;
+    cards.forEach((card, i) => { card.hidden = i !== current; });
+    dots.forEach((dot, i) => {
+      if (i === current) dot.setAttribute('aria-current', 'true');
+      else dot.removeAttribute('aria-current');
     });
+    photoDeck.querySelector('.deck-count').textContent = `${current + 1} / ${cards.length}`;
+  }
+  photoDeck.querySelector('.deck-controls').hidden = false;
+  photoDeck.querySelector('[data-photo-prev]').addEventListener('click', () => showPhoto(current - 1));
+  photoDeck.querySelector('[data-photo-next]').addEventListener('click', () => showPhoto(current + 1));
+  dots.forEach((dot, i) => dot.addEventListener('click', () => showPhoto(i)));
+  photoDeck.addEventListener('keydown', event => {
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+      event.preventDefault();
+      showPhoto(current + (event.key === 'ArrowRight' ? 1 : -1));
+    }
   });
-  photoStory.addEventListener('click', event => {
-    if (event.target !== photoStory) return;
-    const bounds = photoStory.getBoundingClientRect();
-    if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) photoStory.close();
-  });
-}
+  showPhoto(0);
+});
