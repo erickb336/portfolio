@@ -62,3 +62,5 @@ html[data-theme=light]{color-scheme:light;--bg:#f5efff;--fg:#1c0d30;--muted:#6a5
 @media(max-width:380px){.photo-deck .deck-dots button{width:16px}.photo-deck .deck-controls{gap:4px}}
 
 .photo-deck .deck-dots{position:relative;min-width:0;overflow-x:auto;scrollbar-width:thin}.photo-deck .deck-dots button{flex-shrink:0}
+
+.milestone p a{color:var(--accent);font-weight:600;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:4px}
