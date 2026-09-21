@@ -59,4 +59,4 @@ html[data-theme=light]{color-scheme:light;--bg:#f5efff;--fg:#1c0d30;--muted:#6a5
 
 .photo-collection + .photo-collection{margin-top:56px;padding-top:56px;border-top:1px solid var(--line)}
 .photo-deck .deck-controls{gap:6px}.photo-deck .deck-dots button{width:20px}.photo-deck .deck-arrow{flex-shrink:0}
-@media(max-width:380px){.photo-deck .deck-dots button{width:20px}.photo-deck .deck-controls{gap:4px}}
+@media(max-width:380px){.photo-deck .deck-dots button{width:16px}.photo-deck .deck-controls{gap:4px}}
