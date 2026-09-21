@@ -37,3 +37,29 @@ if (deck) {
     }
   });
 }
+
+const bookTrack = document.querySelector('.book-track');
+if (bookTrack) {
+  const controls = document.querySelector('.book-shelf-controls');
+  const previous = controls.querySelector('[data-books-prev]');
+  const next = controls.querySelector('[data-books-next]');
+  controls.hidden = false;
+  const updateBookControls = () => {
+    previous.disabled = bookTrack.scrollLeft <= 2;
+    next.disabled = bookTrack.scrollLeft + bookTrack.clientWidth >= bookTrack.scrollWidth - 2;
+  };
+  const moveBooks = direction => bookTrack.scrollBy({
+    left: direction * (bookTrack.querySelector('.book-card').getBoundingClientRect().width + 18),
+    behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+  });
+  previous.addEventListener('click', () => moveBooks(-1));
+  next.addEventListener('click', () => moveBooks(1));
+  bookTrack.addEventListener('scroll', updateBookControls, {passive: true});
+  window.addEventListener('resize', updateBookControls);
+  bookTrack.querySelectorAll('img').forEach(img => {
+    const fallback = () => { img.hidden = true; img.nextElementSibling.hidden = false; };
+    img.addEventListener('error', fallback);
+    if (img.complete && !img.naturalWidth) fallback();
+  });
+  updateBookControls();
+}
