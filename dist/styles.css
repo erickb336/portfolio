@@ -45,12 +45,14 @@ html[data-theme=light]{color-scheme:light;--bg:#f5efff;--fg:#1c0d30;--muted:#6a5
 #photography{display:block}
 #photography .section-label{margin-bottom:32px}
 #photography .section-label p{margin:0}
-.photo-collection{max-width:660px;margin-inline:auto}
-.photo-deck{max-width:380px;margin-inline:auto;padding-top:12px;outline-offset:8px}
+.photo-collection{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);align-items:center;gap:48px;max-width:1060px;margin-inline:auto}
+.photo-deck{width:100%;max-width:380px;margin-inline:auto;padding-top:12px;outline-offset:8px}
 .photo-card{margin:0;background:var(--surface);border:1px solid var(--line)}
 .photo-card[hidden]{display:none}
 .photo-card img{display:block;width:100%;height:auto;aspect-ratio:1;object-fit:contain;background:var(--surface)}
 .photo-card figcaption{padding:14px 20px;color:var(--muted);font:13px var(--mono);border-top:1px solid var(--line)}
-.photo-prose{margin-top:32px}
+.photo-prose{margin-top:0}
 .photo-prose h3{font-size:clamp(25px,3vw,34px);line-height:1.2;font-weight:500;letter-spacing:-1px;margin:16px 0}
 .photo-prose p{color:var(--muted);line-height:1.8;margin:0}
+
+@media(max-width:700px){.photo-collection{grid-template-columns:minmax(0,1fr);gap:28px}.photo-prose{max-width:540px;margin-inline:auto}}
