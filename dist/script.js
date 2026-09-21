@@ -63,3 +63,18 @@ if (bookTrack) {
   });
   updateBookControls();
 }
+
+const photoStory = document.getElementById('profile-photo-story');
+if (photoStory) {
+  document.querySelectorAll('[data-photo-open]').forEach(link => {
+    link.addEventListener('click', event => {
+      event.preventDefault();
+      photoStory.showModal();
+    });
+  });
+  photoStory.addEventListener('click', event => {
+    if (event.target !== photoStory) return;
+    const bounds = photoStory.getBoundingClientRect();
+    if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) photoStory.close();
+  });
+}

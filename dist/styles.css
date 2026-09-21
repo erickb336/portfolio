@@ -41,3 +41,27 @@ html[data-theme=light]{color-scheme:light;--bg:#f5efff;--fg:#1c0d30;--muted:#6a5
 #reading .reading-shelves{display:grid;grid-template-columns:minmax(0,1fr);gap:18px}
 #reading .finished-shelf{grid-column:1/-1}
 @media(max-width:600px){#reading .reading-shelves{grid-template-columns:minmax(0,1fr)}}
+/* Photo collections pair a cover with the story behind it. */
+#photography{display:block}
+#photography .section-label{margin-bottom:32px}
+#photography .section-label p{margin:0}
+.photo-collection{display:grid;grid-template-columns:minmax(220px,340px) 1fr;border:1px solid var(--line);background:var(--surface);overflow:hidden}
+.collection-cover{display:block;overflow:hidden}
+.collection-cover img{width:100%;height:100%;aspect-ratio:1;object-fit:cover;display:block;transition:transform .3s}
+.collection-cover:hover img{transform:scale(1.025)}
+.collection-intro{padding:clamp(24px,4vw,56px);align-self:center}
+.collection-intro h3,.photo-story h3{font-size:clamp(25px,3vw,36px);line-height:1.2;font-weight:500;letter-spacing:-1px;margin:18px 0}
+.collection-intro p{color:var(--muted);max-width:38em;margin:0 0 28px}
+.collection-open{display:inline-block;color:var(--accent);font:14px var(--mono);padding:8px 0;border-bottom:1px solid var(--line)}
+.photo-story{width:min(1060px,calc(100% - 32px));max-height:90dvh;overflow:auto;padding:clamp(20px,4vw,40px);border:1px solid var(--line);background:var(--bg);color:var(--fg)}
+.photo-story::backdrop{background:rgba(5,3,10,.85);backdrop-filter:blur(6px)}
+.photo-dialog-header{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.photo-close{border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:10px 16px;cursor:pointer}
+.photo-story-prose{max-width:70ch;color:var(--muted);line-height:1.8;margin:0 0 28px}
+.photo-pair{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+.photo-pair figure{margin:0}
+.photo-pair img{display:block;width:100%;height:auto;border:1px solid var(--line)}
+.photo-pair figcaption{color:var(--muted);font:13px var(--mono);margin-top:12px}
+body:has(.photo-story[open]){overflow:hidden}
+@media(max-width:650px){.photo-collection,.photo-pair{grid-template-columns:1fr}.collection-cover img{max-height:420px;object-position:center}.photo-dialog-header .eyebrow{font-size:10px}}
+@media(prefers-reduced-motion:reduce){.collection-cover img{transition:none}}

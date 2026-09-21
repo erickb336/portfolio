@@ -142,7 +142,19 @@
         <section class="reading-shelf" aria-labelledby="reading-next"><h3 id="reading-next">Want to read</h3><p class="reading-empty">I’ll add my to-read list later.</p></section>
       </div>
     </section>
-    <section id="photography" class="section"><div class="section-label"><span>07 / PHOTOGRAPHY</span><h2>A different<br>way of looking.</h2></div><div class="section-content"><p class="lead">Life through my lens.</p><div class="empty-note">A collection of my photographs is on the way.</div></div></section>
+    <section id="photography" class="section" aria-labelledby="photography-heading">
+      <div class="section-label"><span>07 / PHOTOGRAPHY</span><h2 id="photography-heading">Life through my lens.</h2><p class="muted">Photographs and the stories behind them.</p></div>
+      <article class="photo-collection">
+        <a class="collection-cover" href="#profile-photo-story" data-photo-open aria-label="Open The infamous profile picture collection"><img src="/photos/profile-photo.jpg" alt="Erick’s longtime profile photo, with glasses, long hair, and a backpack" width="900" height="900" loading="lazy"></a>
+        <div class="collection-intro"><span class="eyebrow accent">PERSONAL ARCHIVE · 2 PHOTOS</span><h3>The infamous profile picture</h3><p>A random bathroom photo that somehow became my profile picture everywhere.</p><a class="collection-open" href="#profile-photo-story" data-photo-open>View collection <span aria-hidden="true">↗</span></a></div>
+      </article>
+      <dialog id="profile-photo-story" class="photo-story" aria-labelledby="photo-story-title">
+        <form method="dialog" class="photo-dialog-header"><span class="eyebrow accent">PERSONAL ARCHIVE · 2 PHOTOS</span><button class="photo-close" aria-label="Close photo collection">Close ×</button></form>
+        <h3 id="photo-story-title">The infamous profile picture</h3>
+        <p class="photo-story-prose">My infamous profile picture—the one I use for everything. I took it randomly in the bathroom of an Amazon building sometime in 2024 or 2025. I look more like the second photo now. Someday I’ll update my PFP.</p>
+        <div class="photo-pair"><figure><img src="/photos/profile-photo.jpg" alt="Erick’s longtime profile picture, taken in an Amazon building" width="900" height="900" loading="lazy"><figcaption>The PFP · 2024 or 2025</figcaption></figure><figure><img src="/photos/portrait-now.jpg" alt="A more recent portrait of Erick with shorter hair and glasses" width="1200" height="900" loading="lazy"><figcaption>Me these days</figcaption></figure></div>
+      </dialog>
+    </section>
     <section id="milestones" class="section"><div class="section-label"><span>08 / BEYOND THE KEYBOARD</span><h2>More than<br>a résumé.</h2></div><div class="section-content"><p class="lead">Life doesn’t stop at the keyboard.</p><div class="milestone"><span>01</span><div><span class="milestone-stat">05 <small>YEARS</small></span><h3>In the ring</h3><p>I boxed competitively for five years. Amateur fight stories and results coming soon.</p></div></div><div class="milestone"><span>02</span><div><span class="milestone-stat run-stat" aria-hidden="true">↗</span><h3>On the road</h3><p>Half-marathons, marathons, and the miles in between. Race details coming soon.</p></div></div><div class="milestone"><span>03</span><div><span class="milestone-stat">08 <small>YEARS</small></span><h3>On the stage</h3><p>I played French horn for eight years and mellophone for four years in marching band. More about music, Georgia all-state band, and memories from high school soon.</p></div></div></div></section>
     <section id="contact" class="contact"><span class="eyebrow">09 / SAY HELLO</span><h2>Let’s connect<span class="accent">.</span></h2><div class="socials"><a href="https://github.com/erickb336">GitHub ↗</a><a href="https://www.linkedin.com/in/erickb336/">LinkedIn ↗</a></div></section>
   </main>
