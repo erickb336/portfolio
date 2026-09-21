@@ -76,6 +76,8 @@ document.querySelectorAll('.photo-deck').forEach(photoDeck => {
       else dot.removeAttribute('aria-current');
     });
     photoDeck.querySelector('.deck-count').textContent = `${current + 1} / ${cards.length}`;
+    const dotTrack = photoDeck.querySelector('.deck-dots');
+    dotTrack.scrollLeft = dots[current].offsetLeft - (dotTrack.clientWidth - dots[current].offsetWidth) / 2;
   }
   photoDeck.querySelector('.deck-controls').hidden = false;
   photoDeck.querySelector('[data-photo-prev]').addEventListener('click', () => showPhoto(current - 1));
