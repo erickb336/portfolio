@@ -38,6 +38,6 @@ html[data-theme=light]{color-scheme:light;--bg:#f5efff;--fg:#1c0d30;--muted:#6a5
 #reading{display:block}
 #reading .section-label{margin-bottom:32px}
 #reading .section-label h2 br{display:none}
-#reading .reading-shelves{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
-#reading .finished-shelf{grid-column:1/-1;order:1}
+#reading .reading-shelves{display:grid;grid-template-columns:minmax(0,1fr);gap:18px}
+#reading .finished-shelf{grid-column:1/-1}
 @media(max-width:600px){#reading .reading-shelves{grid-template-columns:minmax(0,1fr)}}
