@@ -28,3 +28,26 @@
 .photo-lightbox-close:hover,.photo-lightbox-close:focus-visible{border-color:var(--accent)}
 @media(max-width:700px){.sample-site main > .photo-collection:last-child{margin-bottom:64px}.about-profile-photo{width:min(100%,220px)}}
 @media(max-width:480px){.photo-lightbox{width:90vw;height:72vh}}
+
+/* Main-page paths into the personal side of the portfolio. */
+.home-pathways{padding:72px 0 78px;border-bottom:1px solid var(--line)}
+.pathways-heading{display:flex;align-items:end;justify-content:space-between;gap:36px;margin-bottom:32px}
+.pathways-heading .eyebrow{color:var(--accent)}
+.pathways-heading h2{max-width:560px;margin:0;font-size:38px;letter-spacing:-1.6px;text-align:right}
+.pathway-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}
+.pathway-card{display:grid;grid-template-columns:minmax(150px,.82fr) minmax(0,1.18fr);min-height:340px;border:1px solid var(--line);background:var(--surface);overflow:hidden;transition:transform .25s,border-color .25s,box-shadow .25s}
+.pathway-card:hover{color:var(--fg);border-color:var(--accent);transform:translateY(-4px);box-shadow:0 12px 40px var(--glow)}
+.pathway-image{min-height:100%;overflow:hidden;background:var(--bg)}
+.pathway-image img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .4s ease}
+.pathway-card:first-child .pathway-image img{object-position:54% 38%}
+.pathway-card:last-child .pathway-image img{object-position:55% 50%}
+.pathway-card:hover .pathway-image img{transform:scale(1.025)}
+.pathway-copy{display:flex;flex-direction:column;padding:30px}
+.pathway-copy h3{font-size:clamp(24px,2.4vw,32px);line-height:1.2;letter-spacing:-1px;margin:18px 0 16px}
+.pathway-copy p{color:var(--muted);font-size:16px;line-height:1.7;margin:0 0 24px}
+.pathway-link{margin-top:auto;color:var(--accent);font:13px/1.6 var(--mono)}
+@media(max-width:900px){.pathways-heading{align-items:start;flex-direction:column;gap:14px}.pathways-heading h2{text-align:left}.pathway-card{grid-template-columns:1fr;grid-template-rows:230px auto}.pathway-image{min-height:0}}
+@media(max-width:760px){.pathways-heading h2{font-size:34px}}
+@media(max-width:620px){.home-pathways{padding:54px 0 58px}.pathway-grid{grid-template-columns:1fr}.pathway-card{grid-template-columns:minmax(125px,.75fr) minmax(0,1.25fr);grid-template-rows:none;min-height:300px}.pathway-copy{padding:24px}.pathway-copy h3{font-size:24px}}
+@media(max-width:440px){.pathway-card{grid-template-columns:1fr;grid-template-rows:220px auto}.pathway-copy{min-height:260px}}
+@media(prefers-reduced-motion:reduce){.pathway-card,.pathway-image img{transition:none}}
