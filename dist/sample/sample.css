@@ -68,7 +68,8 @@
 .spotify-copy h3{margin:15px 0 5px;font-size:clamp(24px,2.7vw,34px);line-height:1.15;letter-spacing:-1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .spotify-copy p{margin:0 0 18px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .spotify-progress{height:2px;margin:0 0 18px;background:var(--line);overflow:hidden}.spotify-progress span{display:block;height:100%;background:#1ed760}
-.spotify-copy .text-link{width:max-content;margin-top:auto}
+.spotify-links{display:flex;flex-wrap:wrap;gap:12px 24px;margin-top:auto}
+.spotify-copy .text-link{width:max-content}
 @keyframes spotify-pulse{from{height:3px}to{height:14px}}
 @media(max-width:900px){.spotify-section{grid-template-columns:1fr;gap:28px}.spotify-heading h2{font-size:34px}.spotify-card{max-width:720px}}
 @media(max-width:560px){.spotify-section{padding:54px 0 58px}.spotify-card{grid-template-columns:112px minmax(0,1fr);min-height:150px}.spotify-art{min-height:150px}.spotify-copy{padding:22px}.spotify-copy h3{font-size:23px}}

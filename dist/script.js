@@ -157,6 +157,7 @@ if (spotifyCard) {
       artist.textContent = `${track.artist} · ${track.album}`;
       link.href = track.trackUrl || link.href;
       link.textContent = 'Open this song ↗';
+      link.hidden = false;
       if (track.albumImage) {
         art.innerHTML = '';
         const image = document.createElement('img');
@@ -174,6 +175,6 @@ if (spotifyCard) {
       state.textContent = 'Spotify activity';
       title.textContent = 'Nothing playing right now';
       artist.textContent = 'Check back later to see what I’m listening to.';
-      link.textContent = 'Open Spotify ↗';
+      link.hidden = true;
     });
 }
