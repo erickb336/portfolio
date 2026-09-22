@@ -177,6 +177,17 @@ if (spotifyCard) {
       hasTrack = true;
       spotifyCard.dataset.playing = track.isPlaying ? 'true' : 'false';
       state.textContent = track.isPlaying ? 'Playing now' : 'No Activity';
+      title.hidden = !track.isPlaying;
+      artist.hidden = !track.isPlaying;
+      art.hidden = !track.isPlaying;
+      if (!track.isPlaying) {
+        title.textContent = '';
+        artist.textContent = '';
+        art.innerHTML = '';
+        link.hidden = true;
+        updateProgress(track);
+        return;
+      }
       title.textContent = track.title;
       artist.textContent = `${track.artist} · ${track.album}`;
       link.href = track.trackUrl || link.href;
