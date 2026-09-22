@@ -189,7 +189,7 @@ if (spotifyCard) {
   refreshSpotify();
   window.setInterval(() => {
     if (!document.hidden) refreshSpotify();
-  }, 15000);
+  }, 10000);
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) refreshSpotify();
   });
