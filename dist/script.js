@@ -147,7 +147,26 @@ if (spotifyCard) {
   const art = spotifyCard.querySelector('[data-spotify-art]');
   const link = spotifyCard.querySelector('[data-spotify-link]');
   const progress = spotifyCard.querySelector('[data-spotify-progress]');
+  const progressBar = progress.querySelector('span');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let hasTrack = false;
+
+  const updateProgress = track => {
+    progressBar.style.transition = 'none';
+    if (!track.isPlaying || !track.durationMs) {
+      progress.hidden = true;
+      progressBar.style.width = '0%';
+      return;
+    }
+    const elapsed = Math.min(track.durationMs, Math.max(0, track.progressMs));
+    const remaining = Math.max(0, track.durationMs - elapsed);
+    progress.hidden = false;
+    progressBar.style.width = `${elapsed / track.durationMs * 100}%`;
+    if (reduceMotion.matches) return;
+    progressBar.getBoundingClientRect();
+    progressBar.style.transition = `width ${remaining}ms linear`;
+    progressBar.style.width = '100%';
+  };
 
   const refreshSpotify = () => fetch('/api/spotify', {
     cache: 'no-store',
@@ -170,12 +189,7 @@ if (spotifyCard) {
         image.alt = '';
         art.append(image);
       }
-      if (track.isPlaying && track.durationMs) {
-        progress.hidden = false;
-        progress.querySelector('span').style.width = `${Math.min(100, Math.max(0, track.progressMs / track.durationMs * 100))}%`;
-      } else {
-        progress.hidden = true;
-      }
+      updateProgress(track);
     })
     .catch(() => {
       if (hasTrack) return;
