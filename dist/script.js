@@ -147,10 +147,15 @@ if (spotifyCard) {
   const art = spotifyCard.querySelector('[data-spotify-art]');
   const link = spotifyCard.querySelector('[data-spotify-link]');
   const progress = spotifyCard.querySelector('[data-spotify-progress]');
+  let hasTrack = false;
 
-  fetch('/api/spotify', {headers: {'Accept': 'application/json'}})
+  const refreshSpotify = () => fetch('/api/spotify', {
+    cache: 'no-store',
+    headers: {'Accept': 'application/json'}
+  })
     .then(response => response.ok ? response.json() : Promise.reject(new Error('Spotify unavailable')))
     .then(track => {
+      hasTrack = true;
       spotifyCard.dataset.playing = track.isPlaying ? 'true' : 'false';
       state.textContent = track.isPlaying ? 'Playing now' : 'Recently played';
       title.textContent = track.title;
@@ -168,13 +173,24 @@ if (spotifyCard) {
       if (track.isPlaying && track.durationMs) {
         progress.hidden = false;
         progress.querySelector('span').style.width = `${Math.min(100, Math.max(0, track.progressMs / track.durationMs * 100))}%`;
+      } else {
+        progress.hidden = true;
       }
     })
     .catch(() => {
+      if (hasTrack) return;
       spotifyCard.dataset.playing = 'false';
       state.textContent = 'Spotify activity';
       title.textContent = 'Nothing playing right now';
       artist.textContent = 'Check back later to see what I’m listening to.';
       link.hidden = true;
     });
+
+  refreshSpotify();
+  window.setInterval(() => {
+    if (!document.hidden) refreshSpotify();
+  }, 15000);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) refreshSpotify();
+  });
 }
