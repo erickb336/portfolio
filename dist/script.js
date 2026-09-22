@@ -138,3 +138,42 @@ if (document.querySelector('.photo-deck')) {
     closePhoto();
   });
 }
+
+const spotifyCard = document.querySelector('[data-spotify-card]');
+if (spotifyCard) {
+  const state = spotifyCard.querySelector('[data-spotify-state]');
+  const title = spotifyCard.querySelector('[data-spotify-title]');
+  const artist = spotifyCard.querySelector('[data-spotify-artist]');
+  const art = spotifyCard.querySelector('[data-spotify-art]');
+  const link = spotifyCard.querySelector('[data-spotify-link]');
+  const progress = spotifyCard.querySelector('[data-spotify-progress]');
+
+  fetch('/api/spotify', {headers: {'Accept': 'application/json'}})
+    .then(response => response.ok ? response.json() : Promise.reject(new Error('Spotify unavailable')))
+    .then(track => {
+      spotifyCard.dataset.playing = track.isPlaying ? 'true' : 'false';
+      state.textContent = track.isPlaying ? 'Playing now' : 'Recently played';
+      title.textContent = track.title;
+      artist.textContent = `${track.artist} · ${track.album}`;
+      link.href = track.trackUrl;
+      link.textContent = 'Listen on Spotify ↗';
+      if (track.albumImage) {
+        art.innerHTML = '';
+        const image = document.createElement('img');
+        image.src = track.albumImage;
+        image.alt = '';
+        art.append(image);
+      }
+      if (track.isPlaying && track.durationMs) {
+        progress.hidden = false;
+        progress.querySelector('span').style.width = `${Math.min(100, Math.max(0, track.progressMs / track.durationMs * 100))}%`;
+      }
+    })
+    .catch(() => {
+      spotifyCard.dataset.playing = 'false';
+      state.textContent = 'Spotify activity';
+      title.textContent = 'Nothing playing right now';
+      artist.textContent = 'Check back later to see what I’m listening to.';
+      link.textContent = 'Open Spotify ↗';
+    });
+}
