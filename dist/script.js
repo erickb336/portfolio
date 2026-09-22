@@ -176,7 +176,7 @@ if (spotifyCard) {
     .then(track => {
       hasTrack = true;
       spotifyCard.dataset.playing = track.isPlaying ? 'true' : 'false';
-      state.textContent = track.isPlaying ? 'Playing now' : 'Recently played';
+      state.textContent = track.isPlaying ? 'Playing now' : 'No Activity';
       title.textContent = track.title;
       artist.textContent = `${track.artist} · ${track.album}`;
       link.href = track.trackUrl || link.href;
