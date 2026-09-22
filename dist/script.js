@@ -155,8 +155,8 @@ if (spotifyCard) {
       state.textContent = track.isPlaying ? 'Playing now' : 'Recently played';
       title.textContent = track.title;
       artist.textContent = `${track.artist} · ${track.album}`;
-      link.href = track.trackUrl;
-      link.textContent = 'Listen on Spotify ↗';
+      link.href = track.profileUrl || link.href;
+      link.textContent = 'Open my Spotify ↗';
       if (track.albumImage) {
         art.innerHTML = '';
         const image = document.createElement('img');

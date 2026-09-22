@@ -35,7 +35,8 @@ function sanitizeTrack(payload, isPlaying, playedAt = null) {
     trackUrl: item.external_urls?.spotify || 'https://open.spotify.com/',
     progressMs: isPlaying ? payload.progress_ms || 0 : 0,
     durationMs: item.duration_ms || 0,
-    playedAt
+    playedAt,
+    profileUrl: null
   };
 }
 
@@ -66,7 +67,7 @@ function connect(request, env) {
     client_id: env.SPOTIFY_CLIENT_ID,
     response_type: 'code',
     redirect_uri: REDIRECT_URI,
-    scope: 'user-read-currently-playing user-read-recently-played',
+    scope: 'user-read-currently-playing user-read-recently-played user-read-private',
     state
   });
   return new Response(null, {
@@ -88,15 +89,23 @@ async function callback(request, env) {
   const tokenResponse = await spotifyToken(env, {grant_type: 'authorization_code', code, redirect_uri: REDIRECT_URI});
   if (!tokenResponse.ok) return new Response('Spotify authorization failed.', {status: 502});
   const tokens = await tokenResponse.json();
-  const escaped = String(tokens.refresh_token || '').replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]));
-  return new Response(`<!doctype html><meta charset="utf-8"><meta name="robots" content="noindex"><title>Spotify connected</title><style>body{margin:0;display:grid;place-items:center;min-height:100vh;background:#07050d;color:#f7f3ff;font:16px system-ui}.card{width:min(680px,calc(100% - 48px));padding:36px;border:1px solid #443c54;background:#100d18}h1{margin-top:0;color:#1ed760}code{display:block;overflow-wrap:anywhere;padding:18px;background:#07050d;color:#c8ffda}</style><main class="card"><h1>Spotify connected.</h1><p>Your private connection is ready. Return to Codex so it can finish enabling the activity card.</p><code id="refresh-token">${escaped}</code></main>`, {headers:{'content-type':'text/html; charset=utf-8','cache-control':'no-store','set-cookie':'spotify_oauth_state=; Path=/spotify/; Max-Age=0; HttpOnly; Secure; SameSite=Lax'}});
+  const profileResponse = await fetch(`${SPOTIFY_API}/me`, {headers:{'authorization':`Bearer ${tokens.access_token}`}});
+  const profile = profileResponse.ok ? await profileResponse.json() : null;
+  const escaped = value => String(value || '').replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]));
+  return new Response(`<!doctype html><meta charset="utf-8"><meta name="robots" content="noindex"><title>Spotify connected</title><style>body{margin:0;display:grid;place-items:center;min-height:100vh;background:#07050d;color:#f7f3ff;font:16px system-ui}.card{width:min(680px,calc(100% - 48px));padding:36px;border:1px solid #443c54;background:#100d18}h1{margin-top:0;color:#1ed760}code{display:block;overflow-wrap:anywhere;padding:18px;background:#07050d;color:#c8ffda}</style><main class="card"><h1>Spotify connected.</h1><p>Your private connection is ready. Return to Codex so it can finish enabling the activity card.</p><code id="refresh-token">${escaped(tokens.refresh_token)}</code><code id="profile-url">${escaped(profile?.external_urls?.spotify)}</code></main>`, {headers:{'content-type':'text/html; charset=utf-8','cache-control':'no-store','set-cookie':'spotify_oauth_state=; Path=/spotify/; Max-Age=0; HttpOnly; Secure; SameSite=Lax'}});
 }
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     try {
-      if (url.pathname === '/api/spotify') return await nowPlaying(env);
+      if (url.pathname === '/api/spotify') {
+        const response = await nowPlaying(env);
+        if (!response.ok || !env.SPOTIFY_PROFILE_URL) return response;
+        const payload = await response.json();
+        payload.profileUrl = env.SPOTIFY_PROFILE_URL;
+        return json(payload);
+      }
       if (url.pathname === '/spotify/connect') return connect(request, env);
       if (url.pathname === '/spotify/callback') return await callback(request, env);
       return env.ASSETS.fetch(request);
