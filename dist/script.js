@@ -179,7 +179,7 @@ if (spotifyCard) {
       state.textContent = track.isPlaying ? 'Playing now' : 'No Activity';
       title.hidden = !track.isPlaying;
       artist.hidden = !track.isPlaying;
-      art.hidden = !track.isPlaying;
+      art.hidden = false;
       if (!track.isPlaying) {
         title.textContent = '';
         artist.textContent = '';
