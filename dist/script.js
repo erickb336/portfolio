@@ -59,6 +59,10 @@ if (bookTrack) {
   bookTrack.querySelectorAll('img').forEach(img => {
     const fallback = () => { img.hidden = true; img.nextElementSibling.hidden = false; };
     img.addEventListener('error', fallback);
+    img.addEventListener('load', () => {
+      img.hidden = false;
+      img.nextElementSibling.hidden = true;
+    });
     if (img.complete && !img.naturalWidth) fallback();
   });
   updateBookControls();
