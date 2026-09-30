@@ -59,7 +59,9 @@ Spotify credentials are stored as encrypted hosting secrets and are never commit
 
 ## Strava activity embeds
 
-The About page can show the six latest public runs, walks, and weight-training activities among the account's latest 100 uploads. Strava's official embed script renders each activity; its supported layout determines whether photos are shown. The section remains hidden until an account is connected.
+The About page can show the six latest public runs, walks, and weight-training activities among the account's latest 100 uploads. Strava's official embed script renders configured activities; its supported layout determines whether photos are shown. The section remains hidden until an account is connected.
+
+Full embeds require the public `data-token` from each activity's **Embed on Blog** code. Add that token under the activity ID in `dist/strava-embeds.json` and publish. These are public embed tokens, not OAuth credentials. The API does not supply them through our integration. Newly discovered activities without an embed token appear as links rather than broken iframes. Only IDs still present in the public API feed are rendered, so this mapping does not keep deleted or private activities visible.
 
 The Worker discovers activity IDs, stores a small shared feed, and refreshes it at most every 15 minutes when visited. A Strava webhook invalidates the feed when activities change; deauthorization removes the saved account. Deleted/private activities are removed from the cache before refreshing. Only activity IDs and the profile URL reach the public feed endpoint. We do not copy photos or expose API tokens. Public API-to-embed use is not explicitly exempted by Strava's API agreement; platform approval remains unverified.
 

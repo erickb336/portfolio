@@ -15,9 +15,12 @@ if (section) {
         profile.hidden = false;
       }
       const activities = (data.activities || []).filter(item => /^\d+$/.test(item.id)).slice(0, 6);
+      // Public tokens from Strava's "Embed on Blog" codes, never OAuth credentials.
+      const embeds = await fetch('/strava-embeds.json', {signal: AbortSignal.timeout(5000)})
+        .then(response => response.ok ? response.json() : {}).catch(() => ({}));
       status.textContent = data.unavailable ? 'Activity updates are temporarily unavailable. You can still visit my Strava profile.' : activities.length ? '' : 'No public activities to share yet.';
       // Avoid recreating active embeds if the list has not changed.
-      const signature = activities.map(item => item.id).join(',');
+      const signature = activities.map(item => `${item.id}:${embeds[item.id] || ''}`).join(',');
       if (list.dataset.ids === signature) return;
       list.dataset.ids = signature;
       list.replaceChildren();
@@ -25,17 +28,25 @@ if (section) {
         const card = document.createElement('article');
         card.className = 'strava-activity';
         const frame = document.createElement('div');
-        frame.className = 'strava-embed-placeholder';
-        frame.dataset.embedType = 'activity';
-        frame.dataset.embedId = activity.id;
-        frame.dataset.style = 'standard';
+        const token = embeds[activity.id];
+        if (typeof token === 'string' && /^[A-Za-z0-9_-]+$/.test(token)) {
+          frame.className = 'strava-embed-placeholder';
+          frame.dataset.embedType = 'activity';
+          frame.dataset.embedId = activity.id;
+          frame.dataset.style = 'standard';
+          frame.dataset.fromEmbed = 'false';
+          frame.dataset.token = token;
+        } else {
+          frame.className = 'strava-activity-fallback';
+          frame.textContent = 'A new activity on Strava';
+        }
         const link = document.createElement('a');
         link.href = `https://www.strava.com/activities/${activity.id}`;
         link.textContent = 'View activity on Strava ↗';
         link.target = '_blank'; link.rel = 'noopener noreferrer';
         card.append(frame, link); list.append(card);
       }
-      if (activities.length) {
+      if (list.querySelector('.strava-embed-placeholder')) {
         document.querySelector('#strava-embed-loader')?.remove();
         const script = document.createElement('script');
         script.id = 'strava-embed-loader';
