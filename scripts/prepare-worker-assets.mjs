@@ -1,3 +1,4 @@
+import { build } from 'esbuild';
 import { cpSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -15,3 +16,5 @@ for (const entry of readdirSync(dist, { withFileTypes: true })) {
     dereference: false
   });
 }
+
+await build({entryPoints: ['server/index.js'], bundle: true, format: 'esm', platform: 'browser', target: 'es2022', outfile: 'dist/server/index.js'});
