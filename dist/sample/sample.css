@@ -114,3 +114,10 @@
 .strava-media-empty{height:0;flex-basis:0;border:0;background:transparent}
 .strava-card-no-media{align-self:start}
 .strava-card-no-media .strava-media-empty{flex-grow:0}
+
+.strava-media{position:relative}
+.strava-carousel-controls{position:absolute;left:12px;right:12px;top:12px;z-index:500;display:flex;justify-content:space-between;align-items:center;pointer-events:none}
+.strava-carousel-controls button,.strava-carousel-controls span{pointer-events:auto;background:#161616e8;color:#fff;border:1px solid #ffffff40;border-radius:20px}
+.strava-carousel-controls button{width:36px;height:36px;cursor:pointer;font:20px/1 sans-serif}
+.strava-carousel-controls span{padding:7px 12px;font-size:12px}
+.strava-carousel-controls button:focus-visible{outline:3px solid #fc4c02;outline-offset:2px}

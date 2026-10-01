@@ -65,6 +65,19 @@ if (section) {
     const media = node('div', undefined, 'strava-media');
     const points = activity.sport === 'WeightTraining' ? [] : decodeRoute(activity.route);
     let photo = null;
+    let activeSlide = 0;
+    const slides = [];
+    let mapInstance = null;
+    const controls = node('div', undefined, 'strava-carousel-controls');
+    const counter = node('span');
+    counter.setAttribute('aria-live', 'polite');
+    function showSlide(index) {
+      activeSlide = slides.length ? (index + slides.length) % slides.length : 0;
+      slides.forEach((slide, i) => { slide.element.hidden = i !== activeSlide; });
+      controls.hidden = slides.length < 2;
+      counter.textContent = slides.length ? slides[activeSlide].label + ' · ' + (activeSlide + 1) + ' / ' + slides.length : '';
+      if (mapInstance && slides[activeSlide]?.label === 'Map') mapInstance.invalidateSize({animate:false});
+    }
     try {
       const url = new URL(activity.photo);
       if (url.protocol === 'https:' && !url.username && !url.password && (['d3nn82uaxijpm6.cloudfront.net', 'dgtzuqphqg23d.cloudfront.net'].includes(url.hostname) || url.hostname.endsWith('.strava.com'))) photo = url.href;
@@ -74,8 +87,10 @@ if (section) {
       canvas.setAttribute('role', 'img');
       canvas.setAttribute('aria-label', 'Route for ' + activity.name);
       media.append(canvas);
+      slides.push({element:canvas, label:'Map'});
       pendingMaps.push(() => {
         const map = L.map(canvas, {zoomControl:false, scrollWheelZoom:false, dragging:false, touchZoom:false, doubleClickZoom:false, boxZoom:false, keyboard:false, zoomAnimation:false, fadeAnimation:false});
+        mapInstance = map;
         maps.push(map);
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19, attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(map);
         const route = L.polyline(points, {color:'#fc4c02',weight:4,opacity:1}).addTo(map);
@@ -86,11 +101,23 @@ if (section) {
       const img = node('img', undefined, 'strava-photo');
       img.src = photo; img.alt = activity.name;
       img.loading = 'lazy'; img.referrerPolicy = 'no-referrer';
-      img.onerror = () => { img.remove(); if (!media.children.length) { media.className = 'strava-media strava-media-empty'; article.className += ' strava-card-no-media'; } };
+      img.onerror = () => { img.remove(); const index = slides.findIndex(slide => slide.element === img); if (index >= 0) slides.splice(index, 1); showSlide(0); if (!slides.length) { media.className = 'strava-media strava-media-empty'; article.className += ' strava-card-no-media'; } };
       media.append(img);
+      slides.push({element:img, label:'Photo'});
     }
     if (!media.children.length) { media.className += ' strava-media-empty'; article.className += ' strava-card-no-media'; }
-    if (points.length && photo) media.className += ' strava-media-pair';
+    if (slides.length > 1) {
+      const previous = node('button', '←');
+      const next = node('button', '→');
+      previous.type = next.type = 'button';
+      previous.setAttribute('aria-label', 'Previous map or photo');
+      next.setAttribute('aria-label', 'Next map or photo');
+      previous.addEventListener('click', () => showSlide(activeSlide - 1));
+      next.addEventListener('click', () => showSlide(activeSlide + 1));
+      controls.append(previous, counter, next);
+      media.append(controls);
+    }
+    showSlide(0);
     article.append(media);
     const link = node('a', 'View on Strava ↗');
     link.href = `https://www.strava.com/activities/${activity.id}`;
