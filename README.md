@@ -59,9 +59,9 @@ Spotify credentials are stored as encrypted hosting secrets and are never commit
 
 ## Strava activity cards
 
-The About page automatically shows custom cards for the six latest public runs, walks, and weight-training activities among the account's latest 100 uploads. No per-activity embed code is required. Cards show title, sport, activity date/time, duration, distance/elevation where relevant, and the primary photo when Strava provides one. Full photo galleries and route maps are not included.
+The About page automatically shows custom cards for the six latest public runs, walks, and weight-training activities among the account's latest 100 uploads. No per-activity embed code is required. Cards show title, sport, activity date/time, duration, distance/elevation where relevant, and the primary photo when Strava provides one. Cards include an orange route on an OpenStreetMap basemap when Strava supplies a summary route. Full GPS streams and full photo galleries are not included. Leaflet is vendored at version 1.9.4 with its license.
 
-The Worker keeps OAuth credentials encrypted and publishes only allowlisted activity fields. Private activities, other athletes, location coordinates, health metrics, and private notes are excluded. A webhook clears the cached feed on activity changes and refreshes it. Visits also refresh the shared upstream cache after 15 minutes; visible pages check the site endpoint every minute. Photos require a bounded detail request only for activities that report photos. Deauthorization deletes the connection.
+The Worker keeps OAuth credentials encrypted and publishes only allowlisted activity fields. Private activities, other athletes, raw start/end coordinates, full GPS streams, health metrics, and private notes are excluded. Only the summary route is displayed; a missing summary is never replaced with the full route. A webhook clears the cached feed on activity changes and refreshes it. Visits also refresh the shared upstream cache after 15 minutes; visible pages check the site endpoint every minute. Photos require a bounded detail request only for activities that report photos. Deauthorization deletes the connection.
 
 The owner explicitly requested public API-based cards. This is not a private display: anyone can read the published summaries. Strava platform approval remains unverified.
 

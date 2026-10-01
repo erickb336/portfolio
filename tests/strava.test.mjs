@@ -56,3 +56,10 @@ test('public summaries exclude sensitive fields and sanitize photo URLs',()=>{
  for(const field of ['private_note','start_latlng','average_heartrate','athlete','map'])assert.equal(field in result,false);
  assert.equal(publicActivities([{...activity(2),photos:{primary:{urls:{600:'javascript:alert(1)'}}}}],'123')[0].photo,null);
 });
+
+test('publishes only summary route, never the full GPS polyline',()=>{
+ const result=publicActivities([{...activity(1),map:{summary_polyline:'summary',polyline:'private-full-route'}}],'123')[0];
+ assert.equal(result.route,'summary');
+ assert.equal(JSON.stringify(result).includes('private-full-route'),false);
+ assert.equal(publicActivities([{...activity(1),map:{polyline:'private-full-route'}}],'123')[0].route,null);
+});

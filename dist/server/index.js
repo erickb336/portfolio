@@ -92,7 +92,8 @@ function publicActivities(activities, athleteId) {
     movingTime: metric(activity.moving_time),
     elapsedTime: metric(activity.elapsed_time),
     elevation: metric(activity.total_elevation_gain),
-    photo: publicPhoto(activity.photos?.primary?.urls)
+    photo: publicPhoto(activity.photos?.primary?.urls),
+    route: typeof activity.map?.summary_polyline === "string" && activity.map.summary_polyline.length <= 2e4 ? activity.map.summary_polyline : null
   }));
 }
 var metric = (value) => typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : 0;
@@ -136,7 +137,7 @@ async function sync(env, force = false) {
         if (!detailResponse.ok) return;
         const detail = await detailResponse.json();
         const safe = publicActivities([detail], auth.athleteId)[0];
-        feed2[index] = safe?.id === item.id ? safe : null;
+        feed2[index] = safe?.id === item.id ? { ...safe, route: item.route } : null;
       } catch {
       }
     }));
@@ -149,7 +150,7 @@ async function sync(env, force = false) {
 async function feed(env) {
   if (!env.DB || !env.STRAVA_ENCRYPTION_KEY) return reply({ connected: false, activities: [] });
   const before = await stateRow(env);
-  const oldFormat = before && JSON.parse(before.feed).some((item) => !item.sport);
+  const oldFormat = before && JSON.parse(before.feed).some((item) => !Object.hasOwn(item, "route"));
   await sync(env, Boolean(oldFormat));
   const row = await stateRow(env);
   if (!row) return reply({ connected: false, activities: [] });

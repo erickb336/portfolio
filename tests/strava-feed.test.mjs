@@ -32,3 +32,14 @@ test('renders new API activities without embed codes, refreshes edits, and clear
   assert.equal(list.children.length,0);
   assert.match(status.textContent,/temporarily unavailable/);
 });
+
+test('route decoder handles valid coordinates and rejects malformed or oversized paths',()=>{
+ const context={document:{querySelector:()=>null}};
+ runInNewContext(readFileSync('dist/strava-feed.js','utf8'),context);
+ const points=context.decodeRoute('_p~iF~ps|U_ulLnnqC_mqNvxq`@');
+ assert.equal(points.length,3);
+ assert.equal(points[0][0],38.5);
+ assert.equal(points[0][1],-120.2);
+ assert.equal(context.decodeRoute('_').length,0);
+ assert.equal(context.decodeRoute('x'.repeat(20001)).length,0);
+});
