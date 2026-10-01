@@ -67,7 +67,7 @@ if (section) {
     let photo = null;
     try {
       const url = new URL(activity.photo);
-      if (url.protocol === 'https:' && !url.username && !url.password && (url.hostname === 'd3nn82uaxijpm6.cloudfront.net' || url.hostname.endsWith('.strava.com'))) photo = url.href;
+      if (url.protocol === 'https:' && !url.username && !url.password && (['d3nn82uaxijpm6.cloudfront.net', 'dgtzuqphqg23d.cloudfront.net'].includes(url.hostname) || url.hostname.endsWith('.strava.com'))) photo = url.href;
     } catch {}
     if (points.length && typeof L !== 'undefined') {
       const canvas = node('div', undefined, 'strava-route');
@@ -86,10 +86,10 @@ if (section) {
       const img = node('img', undefined, 'strava-photo');
       img.src = photo; img.alt = activity.name;
       img.loading = 'lazy'; img.referrerPolicy = 'no-referrer';
-      img.onerror = () => { img.remove(); if (!media.children.length) media.append(node('span', type, 'strava-media-label')); };
+      img.onerror = () => { img.remove(); if (!media.children.length) { media.className = 'strava-media strava-media-empty'; article.className += ' strava-card-no-media'; } };
       media.append(img);
     }
-    if (!media.children.length) media.append(node('span', type === 'Weight training' ? 'Strength session' : 'Outdoor session', 'strava-media-label'));
+    if (!media.children.length) { media.className += ' strava-media-empty'; article.className += ' strava-card-no-media'; }
     if (points.length && photo) media.className += ' strava-media-pair';
     article.append(media);
     const link = node('a', 'View on Strava ↗');

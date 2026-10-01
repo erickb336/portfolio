@@ -63,3 +63,9 @@ test('publishes only summary route, never the full GPS polyline',()=>{
  assert.equal(JSON.stringify(result).includes('private-full-route'),false);
  assert.equal(publicActivities([{...activity(1),map:{polyline:'private-full-route'}}],'123')[0].route,null);
 });
+
+test('accepts Strava activity photo CDN and chooses highest resolution',()=>{
+ const value=publicActivities([{...activity(1),photos:{primary:{urls:{600:'https://dgtzuqphqg23d.cloudfront.net/photo-large.jpg',100:'https://dgtzuqphqg23d.cloudfront.net/photo-small.jpg'}}}}],'123')[0];
+ assert.equal(value.photo,'https://dgtzuqphqg23d.cloudfront.net/photo-large.jpg');
+ assert.equal(publicActivities([{...activity(1),photos:{primary:{urls:{600:'https://dgtzuqphqg23d.cloudfront.net.evil.example/photo.jpg'}}}}],'123')[0].photo,null);
+});

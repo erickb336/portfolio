@@ -91,16 +91,17 @@ export function publicActivities(activities, athleteId) {
       elapsedTime: metric(activity.elapsed_time),
       elevation: metric(activity.total_elevation_gain),
       photo: publicPhoto(activity.photos?.primary?.urls),
+      mediaVersion: 2,
       route: typeof activity.map?.summary_polyline === 'string' && activity.map.summary_polyline.length <= 20000 ? activity.map.summary_polyline : null,
     }));
 }
 const metric = value => typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : 0;
 export function publicPhoto(urls) {
-  for (const value of Object.values(urls || {}).reverse()) {
+  for (const value of Object.entries(urls || {}).sort(([a], [b]) => Number(b) - Number(a)).map(([, value]) => value)) {
     try {
       const url = new URL(value);
       if (url.protocol === 'https:' && !url.username && !url.password &&
-          (url.hostname === 'd3nn82uaxijpm6.cloudfront.net' || url.hostname.endsWith('.strava.com'))) return url.href;
+          (['d3nn82uaxijpm6.cloudfront.net', 'dgtzuqphqg23d.cloudfront.net'].includes(url.hostname) || url.hostname.endsWith('.strava.com'))) return url.href;
     } catch {}
   }
   return null;
@@ -147,7 +148,7 @@ async function sync(env, force = false) {
 async function feed(env) {
   if (!env.DB || !env.STRAVA_ENCRYPTION_KEY) return reply({connected: false, activities: []});
   const before = await stateRow(env);
-  const oldFormat = before && JSON.parse(before.feed).some(item => !Object.hasOwn(item, 'route'));
+  const oldFormat = before && JSON.parse(before.feed).some(item => item.mediaVersion !== 2);
   await sync(env, Boolean(oldFormat));
   const row = await stateRow(env);
   if (!row) return reply({connected: false, activities: []});
