@@ -58,3 +58,5 @@
 .strava-carousel-controls button:focus-visible{outline:3px solid #fc4c02;outline-offset:2px}
 
 .strava-activities{grid-template-columns:repeat(2,minmax(0,1fr))}.strava-custom-card h3{font-size:18px}.strava-custom-card{background:var(--panel)}@media(max-width:640px){.strava-activities{grid-template-columns:1fr}}
+
+.project-visual.generated-cover{position:relative;display:block;padding:0;height:auto;aspect-ratio:605/395;overflow:hidden;background:#090a0b}.generated-cover img{position:absolute;width:207.272727%;max-width:none;height:auto;display:block;border-radius:0}

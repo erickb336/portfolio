@@ -120,7 +120,8 @@ function publicActivities(activities, athleteId) {
     elapsedTime: metric(activity.elapsed_time),
     elevation: metric(activity.total_elevation_gain),
     photo: publicPhoto(activity.photos?.primary?.urls),
-    mediaVersion: 2,
+    photos: [publicPhoto(activity.photos?.primary?.urls)].filter(Boolean),
+    mediaVersion: 3,
     route: typeof activity.map?.summary_polyline === "string" && activity.map.summary_polyline.length <= 2e4 ? activity.map.summary_polyline : null
   }));
 }
@@ -166,6 +167,18 @@ async function sync(env, force = false) {
         const detail = await detailResponse.json();
         const safe = publicActivities([detail], auth.athleteId)[0];
         feed2[index] = safe?.id === item.id ? { ...safe, route: item.route } : null;
+        if (!feed2[index]) return;
+        const photosResponse = await fetch(`${API}/activities/${item.id}/photos?size=1200&photo_sources=1`, {
+          headers: { authorization: `Bearer ${accessToken}` },
+          signal: AbortSignal.timeout(5e3)
+        });
+        if (photosResponse.ok) {
+          const album = await photosResponse.json();
+          if (Array.isArray(album)) {
+            const photos = [...new Set(album.map((photo) => publicPhoto(photo?.urls)).filter(Boolean))];
+            if (photos.length) feed2[index].photos = photos;
+          }
+        }
       } catch {
       }
     }));
@@ -178,7 +191,7 @@ async function sync(env, force = false) {
 async function feed(env) {
   if (!env.DB || !env.STRAVA_ENCRYPTION_KEY) return reply({ connected: false, activities: [] });
   const before = await stateRow(env);
-  const oldFormat = before && JSON.parse(before.feed).some((item) => item.mediaVersion !== 2);
+  const oldFormat = before && JSON.parse(before.feed).some((item) => item.mediaVersion !== 3);
   await sync(env, Boolean(oldFormat));
   const row = await stateRow(env);
   if (!row) return reply({ connected: false, activities: [] });

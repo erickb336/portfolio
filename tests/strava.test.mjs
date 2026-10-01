@@ -69,3 +69,25 @@ test('accepts Strava activity photo CDN and chooses highest resolution',()=>{
  assert.equal(value.photo,'https://dgtzuqphqg23d.cloudfront.net/photo-large.jpg');
  assert.equal(publicActivities([{...activity(1),photos:{primary:{urls:{600:'https://dgtzuqphqg23d.cloudfront.net.evil.example/photo.jpg'}}}}],'123')[0].photo,null);
 });
+
+test('loads all album photos after checking ownership and visibility, with safe fallback',async()=>{
+ const env=await fixture();const original=globalThis.fetch;
+ const one='https://dgtzuqphqg23d.cloudfront.net/one.jpg';
+ const two='https://dgtzuqphqg23d.cloudfront.net/two.jpg';
+ const calls=[];
+ globalThis.fetch=async(url)=>{
+  const path=String(url);calls.push(path);
+  if(path.endsWith('/oauth/token'))return Response.json({access_token:'access',refresh_token:'refresh',expires_at:stamp()+21600});
+  if(path.includes('/athlete/activities'))return Response.json([{...activity(1),total_photo_count:2},{...activity(2),total_photo_count:1}]);
+  if(path.includes('/2/photos'))return new Response('',{status:503});
+  if(path.includes('/1/photos'))return Response.json([{urls:{1200:one}},{urls:{1200:two}},{urls:{1200:one}},{urls:{1200:'https://evil.example/photo.jpg'}}]);
+  return Response.json({...activity(path.endsWith('/2')?2:1),photos:{primary:{urls:{1200:one}}}});
+ };
+ try {
+  const result=await(await handleStrava(request('/api/strava'),env,{})).json();
+  assert.deepEqual(result.activities.find(a=>a.id==='1').photos,[one,two]);
+  assert.deepEqual(result.activities.find(a=>a.id==='2').photos,[one]);
+  assert.equal(result.activities[0].mediaVersion,3);
+  assert.equal(calls.filter(u=>u.includes('/photos?')).length,2);
+ }finally{globalThis.fetch=original;}
+});

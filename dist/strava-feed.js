@@ -64,7 +64,7 @@ if (section) {
     article.append(stats);
     const media = node('div', undefined, 'strava-media');
     const points = activity.sport === 'WeightTraining' ? [] : decodeRoute(activity.route);
-    let photo = null;
+    const photos = [];
     let activeSlide = 0;
     const slides = [];
     let mapInstance = null;
@@ -78,10 +78,12 @@ if (section) {
       counter.textContent = slides.length ? slides[activeSlide].label + ' · ' + (activeSlide + 1) + ' / ' + slides.length : '';
       if (mapInstance && slides[activeSlide]?.label === 'Map') mapInstance.invalidateSize({animate:false});
     }
-    try {
-      const url = new URL(activity.photo);
-      if (url.protocol === 'https:' && !url.username && !url.password && (['d3nn82uaxijpm6.cloudfront.net', 'dgtzuqphqg23d.cloudfront.net'].includes(url.hostname) || url.hostname.endsWith('.strava.com'))) photo = url.href;
-    } catch {}
+    for (const candidate of (Array.isArray(activity.photos) && activity.photos.length ? activity.photos : [activity.photo])) {
+      try {
+        const url = new URL(candidate);
+        if (url.protocol === 'https:' && !url.username && !url.password && (['d3nn82uaxijpm6.cloudfront.net', 'dgtzuqphqg23d.cloudfront.net'].includes(url.hostname) || url.hostname.endsWith('.strava.com')) && !photos.includes(url.href)) photos.push(url.href);
+      } catch {}
+    }
     if (points.length && typeof L !== 'undefined') {
       const canvas = node('div', undefined, 'strava-route');
       canvas.setAttribute('role', 'img');
@@ -97,13 +99,13 @@ if (section) {
         map.fitBounds(route.getBounds(), {padding:[24,24],maxZoom:16,animate:false});
       });
     }
-    if (photo) {
+    for (const [photoIndex, photo] of photos.entries()) {
       const img = node('img', undefined, 'strava-photo');
-      img.src = photo; img.alt = activity.name;
+      img.src = photo; img.alt = activity.name + ' — photo ' + (photoIndex + 1);
       img.loading = 'lazy'; img.referrerPolicy = 'no-referrer';
       img.onerror = () => { img.remove(); const index = slides.findIndex(slide => slide.element === img); if (index >= 0) slides.splice(index, 1); showSlide(0); if (!slides.length) { media.className = 'strava-media strava-media-empty'; article.className += ' strava-card-no-media'; } };
       media.append(img);
-      slides.push({element:img, label:'Photo'});
+      slides.push({element:img, label:'Photo ' + (photoIndex + 1)});
     }
     if (!media.children.length) { media.className += ' strava-media-empty'; article.className += ' strava-card-no-media'; }
     if (slides.length > 1) {
