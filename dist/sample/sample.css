@@ -112,7 +112,5 @@
 @media(max-width:1000px){.strava-activities{grid-template-columns:1fr}}
 
 .strava-media-empty{height:0;flex-basis:0;border:0;background:transparent}
-.strava-card-no-media:has(+ .strava-card-no-media):nth-child(odd),
-.strava-card-no-media:nth-child(odd)+.strava-card-no-media{align-self:start}
-.strava-card-no-media .strava-media-empty{flex-grow:1}
-@media(max-width:1000px){.strava-card-no-media .strava-media-empty{flex-grow:0}}
+.strava-card-no-media{align-self:start}
+.strava-card-no-media .strava-media-empty{flex-grow:0}
