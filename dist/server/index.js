@@ -82,7 +82,29 @@ async function token(env, auth) {
 function publicActivities(activities, athleteId) {
   return activities.filter(
     (activity) => Number.isSafeInteger(activity.id) && activity.id > 0 && String(activity.athlete?.id) === String(athleteId) && activity.visibility === "everyone" && activity.private !== true && TYPES.has(activity.sport_type || activity.type)
-  ).sort((a, b) => Date.parse(b.start_date) - Date.parse(a.start_date)).slice(0, 6).map((activity) => ({ id: String(activity.id) }));
+  ).sort((a, b) => Date.parse(b.start_date) - Date.parse(a.start_date)).slice(0, 6).map((activity) => ({
+    id: String(activity.id),
+    name: typeof activity.name === "string" ? activity.name.slice(0, 200) : "Activity",
+    sport: activity.sport_type || activity.type,
+    startDate: Number.isFinite(Date.parse(activity.start_date)) ? activity.start_date : null,
+    timezone: typeof activity.timezone === "string" ? activity.timezone.replace(/^\(GMT[^)]+\)\s*/, "") : "UTC",
+    distance: metric(activity.distance),
+    movingTime: metric(activity.moving_time),
+    elapsedTime: metric(activity.elapsed_time),
+    elevation: metric(activity.total_elevation_gain),
+    photo: publicPhoto(activity.photos?.primary?.urls)
+  }));
+}
+var metric = (value) => typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : 0;
+function publicPhoto(urls) {
+  for (const value of Object.values(urls || {}).reverse()) {
+    try {
+      const url = new URL(value);
+      if (url.protocol === "https:" && !url.username && !url.password && (url.hostname === "d3nn82uaxijpm6.cloudfront.net" || url.hostname.endsWith(".strava.com"))) return url.href;
+    } catch {
+    }
+  }
+  return null;
 }
 async function sync(env, force = false) {
   const stamp = now();
@@ -99,7 +121,26 @@ async function sync(env, force = false) {
     const activities = await response.json();
     if (!Array.isArray(activities)) throw new Error("Invalid activity list");
     const feed2 = publicActivities(activities, auth.athleteId);
-    await env.DB.prepare("UPDATE strava_state SET feed = ?, synced_at = ?, lock_until = 0 WHERE id = 1 AND lock_until = ? AND revision = ?").bind(JSON.stringify(feed2), stamp, stamp + 60, lease.revision).run();
+    await Promise.all(feed2.map(async (item, index) => {
+      const summary = activities.find((activity) => String(activity.id) === item.id);
+      if (!summary?.total_photo_count) return;
+      try {
+        const detailResponse = await fetch(`${API}/activities/${item.id}`, {
+          headers: { authorization: `Bearer ${accessToken}` },
+          signal: AbortSignal.timeout(5e3)
+        });
+        if (detailResponse.status === 404) {
+          feed2[index] = null;
+          return;
+        }
+        if (!detailResponse.ok) return;
+        const detail = await detailResponse.json();
+        const safe = publicActivities([detail], auth.athleteId)[0];
+        feed2[index] = safe?.id === item.id ? safe : null;
+      } catch {
+      }
+    }));
+    await env.DB.prepare("UPDATE strava_state SET feed = ?, synced_at = ?, lock_until = 0 WHERE id = 1 AND lock_until = ? AND revision = ?").bind(JSON.stringify(feed2.filter(Boolean)), stamp, stamp + 60, lease.revision).run();
   } catch {
     await env.DB.prepare("UPDATE strava_state SET lock_until = ? WHERE id = 1 AND lock_until = ?").bind(stamp + 300, stamp + 60).run();
     logFailure();
@@ -107,7 +148,9 @@ async function sync(env, force = false) {
 }
 async function feed(env) {
   if (!env.DB || !env.STRAVA_ENCRYPTION_KEY) return reply({ connected: false, activities: [] });
-  await sync(env);
+  const before = await stateRow(env);
+  const oldFormat = before && JSON.parse(before.feed).some((item) => !item.sport);
+  await sync(env, Boolean(oldFormat));
   const row = await stateRow(env);
   if (!row) return reply({ connected: false, activities: [] });
   const auth = await unseal(env, row.encrypted);

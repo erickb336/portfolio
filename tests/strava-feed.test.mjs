@@ -3,22 +3,32 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
 
-test('renders only complete official embeds and skips missing or malformed codes', async () => {
-  const element = () => ({dataset: {}, children: [], append(...items) {this.children.push(...items);}, replaceChildren() {this.children = [];}});
-  const list = element();
-  list.querySelector = () => list.children.flatMap(card => card.children).find(item => item.className === 'strava-embed-placeholder');
-  const status = element(), profile = element(), section = element(), body = element();
-  section.querySelector = selector => ({'[data-activity-list]':list, '[data-activity-status]':status, '[data-strava-profile]':profile})[selector];
-  runInNewContext(readFileSync('dist/strava-feed.js', 'utf8'), {
-    document: {querySelector: selector => selector === '#activity' ? section : null, createElement: element, body},
-    fetch: async url => ({ok:true, json:async () => url === '/api/strava'
-      ? {connected:true, activities:[{id:'1'}, {id:'2'}, {id:'3'}, {id:'4'}], profileUrl:'https://www.strava.com/athletes/123'}
-      : {'1':'public-embed-token', '3':'', '4':'bad token!'}}),
-    AbortSignal, setInterval() {},
+test('renders new API activities without embed codes, refreshes edits, and clears unavailable data', async () => {
+  const element = tag => ({tag, dataset:{}, children:[], append(...items){this.children.push(...items);}, replaceChildren(...items){this.children=items;}});
+  const list=element(), status=element(), profile=element(), section=element(), body=element();
+  section.querySelector=selector=>({'[data-activity-list]':list,'[data-activity-status]':status,'[data-strava-profile]':profile})[selector];
+  let data={connected:true,activities:[{id:'20401166942',name:'Evening Weight Training',sport:'WeightTraining',startDate:'2026-10-01T01:16:00Z',timezone:'America/Los_Angeles',elapsedTime:2049,movingTime:2049,distance:0,elevation:0}],profileUrl:'https://www.strava.com/athletes/123'};
+  let poll; const calls=[];
+  runInNewContext(readFileSync('dist/strava-feed.js','utf8'),{
+    document:{querySelector:selector=>selector==='#activity'?section:null,createElement:element,body,addEventListener(){}},
+    fetch:async url=>{calls.push(url);return {ok:true,json:async()=>data};},
+    AbortSignal,URL,Intl,setInterval(fn){poll=fn;},
   });
-  await new Promise(resolve => setImmediate(resolve));
-  assert.equal(list.children.length, 1);
-  assert.equal(list.children[0].children[0].dataset.token, 'public-embed-token');
-  assert.equal(list.children[0].children[0].dataset.fromEmbed, 'false');
-  assert.equal(body.children[0].src, 'https://strava-embeds.com/embed.js');
+  const flush=()=>new Promise(resolve=>setImmediate(resolve));
+  await flush();
+  assert.equal(list.children.length,1);
+  const card=list.children[0];
+  assert.equal(card.children[1].textContent,'Evening Weight Training');
+  assert.match(card.children[2].textContent,/6:16 PM/);
+  assert.equal(card.children[3].children[0].children[1].textContent,'34m 9s');
+  assert.equal(card.children.at(-1).href,'https://www.strava.com/activities/20401166942');
+  assert.deepEqual(calls,['/api/strava']);
+  assert.equal(body.children.length,0);
+  data.activities[0].name='<script>not executable</script>';
+  poll();await flush();
+  assert.equal(list.children[0].children[1].textContent,'<script>not executable</script>');
+  data={connected:true,unavailable:true,activities:[]};
+  poll();await flush();
+  assert.equal(list.children.length,0);
+  assert.match(status.textContent,/temporarily unavailable/);
 });

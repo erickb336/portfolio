@@ -16,7 +16,7 @@ async function fixture(){const env={DB:database(),STRAVA_ENCRYPTION_KEY:'test-en
 const activity=(id,type='Run',visibility='everyone')=>({id,sport_type:type,visibility,athlete:{id:123},start_date:`2026-09-${id<10?'0':''}${id}T12:00:00Z`});
 test('includes public runs walks lifts, rejects followers private foreign and malformed activities',()=>{
  const input=[activity(1),activity(2,'Walk'),activity(3,'WeightTraining'),activity(4,'Run','followers_only'),{...activity(5),private:true},activity(6,'Ride'),{...activity(7),athlete:{id:999}},activity('bad')];
- assert.deepEqual(publicActivities(input,'123'),[{id:'3'},{id:'2'},{id:'1'}]);
+ assert.deepEqual(publicActivities(input,'123').map(a=>a.id),['3','2','1']);
  assert.deepEqual(publicActivities([{...activity(8),visibility:undefined}],'123'),[]);
 });
 test('tokens are encrypted with authenticated encryption',async()=>{
@@ -27,10 +27,10 @@ test('tokens are encrypted with authenticated encryption',async()=>{
 test('unconfigured endpoint hides feed',async()=>{
  assert.deepEqual(await (await handleStrava(request('/api/strava'),{},{})).json(),{connected:false,activities:[]});
 });
-test('refresh rotates token before listing, cache prevents repeat calls, only IDs are exposed',async()=>{
+test('refresh rotates token before listing, cache prevents repeat calls, only allowlisted fields are exposed',async()=>{
  const env=await fixture();const original=globalThis.fetch;const calls=[];
  globalThis.fetch=async(url,options)=>{calls.push(String(url));if(String(url).endsWith('/oauth/token'))return Response.json({access_token:'new-access',refresh_token:'new-refresh',expires_at:stamp()+21600});assert.equal(options.headers.authorization,'Bearer new-access');return Response.json([activity(1),activity(2,'Walk'),activity(3,'WeightTraining')]);};
- try{for(let i=0;i<2;i++){const result=await(await handleStrava(request('/api/strava'),env,{})).json();assert.deepEqual(result.activities,[{id:'3'},{id:'2'},{id:'1'}]);assert.equal(JSON.stringify(result).includes('token'),false);}assert.equal(calls.length,2);const row=await env.DB.prepare('SELECT * FROM strava_state').first();assert.equal((await unseal(env,row.encrypted)).refreshToken,'new-refresh');}finally{globalThis.fetch=original;}
+ try{for(let i=0;i<2;i++){const result=await(await handleStrava(request('/api/strava'),env,{})).json();assert.deepEqual(result.activities.map(a=>a.id),['3','2','1']);assert.equal(JSON.stringify(result).includes('token'),false);}assert.equal(calls.length,2);const row=await env.DB.prepare('SELECT * FROM strava_state').first();assert.equal((await unseal(env,row.encrypted)).refreshToken,'new-refresh');}finally{globalThis.fetch=original;}
 });
 test('setup requires owner key and same origin; callback requires matching cookie',async()=>{
  const env=await fixture();const res=await handleStrava(new Request('https://erickbenitez.com/strava/connect',{method:'POST',headers:{origin:'https://evil.example'},body:'{}'}),env,{});assert.equal(res.status,403);
@@ -47,4 +47,12 @@ test('API failure backs off and stale feed is not served',async()=>{
  const env=await fixture();const original=globalThis.fetch;let calls=0;
  globalThis.fetch=async()=>{calls++;return new Response('',{status:429});};
  try{for(let i=0;i<2;i++){const result=await(await handleStrava(request('/api/strava'),env,{})).json();assert.deepEqual(result.activities,[]);assert.equal(result.unavailable,true);}assert.equal(calls,1);}finally{globalThis.fetch=original;}
+});
+
+test('public summaries exclude sensitive fields and sanitize photo URLs',()=>{
+ const result=publicActivities([{...activity(1),name:'Lift',elapsed_time:2049,private_note:'secret',start_latlng:[1,2],average_heartrate:140,photos:{primary:{urls:{600:'https://d3nn82uaxijpm6.cloudfront.net/test.jpg'}}}}],'123')[0];
+ assert.equal(result.elapsedTime,2049);
+ assert.equal(result.photo,'https://d3nn82uaxijpm6.cloudfront.net/test.jpg');
+ for(const field of ['private_note','start_latlng','average_heartrate','athlete','map'])assert.equal(field in result,false);
+ assert.equal(publicActivities([{...activity(2),photos:{primary:{urls:{600:'javascript:alert(1)'}}}}],'123')[0].photo,null);
 });

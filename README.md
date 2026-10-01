@@ -57,13 +57,14 @@ The production site is published through the existing OpenAI Sites project. Succ
 
 Spotify credentials are stored as encrypted hosting secrets and are never committed to the repository.
 
-## Strava activity embeds
+## Strava activity cards
 
-The About page can show the six latest public runs, walks, and weight-training activities among the account's latest 100 uploads. Strava's official embed script renders configured activities; its supported layout determines whether photos are shown. The section remains hidden until an account is connected.
+The About page automatically shows custom cards for the six latest public runs, walks, and weight-training activities among the account's latest 100 uploads. No per-activity embed code is required. Cards show title, sport, activity date/time, duration, distance/elevation where relevant, and the primary photo when Strava provides one. Full photo galleries and route maps are not included.
 
-Full embeds require the public `data-token` from each activity's **Embed on Blog** code. Add that token under the activity ID in `dist/strava-embeds.json` and publish. These are public embed tokens, not OAuth credentials. The API does not supply them through our integration. Newly discovered activities without an embed token appear as links rather than broken iframes. Only IDs still present in the public API feed are rendered, so this mapping does not keep deleted or private activities visible.
+The Worker keeps OAuth credentials encrypted and publishes only allowlisted activity fields. Private activities, other athletes, location coordinates, health metrics, and private notes are excluded. A webhook clears the cached feed on activity changes and refreshes it. Visits also refresh the shared upstream cache after 15 minutes; visible pages check the site endpoint every minute. Photos require a bounded detail request only for activities that report photos. Deauthorization deletes the connection.
 
-The Worker discovers activity IDs, stores a small shared feed, and refreshes it at most every 15 minutes when visited. A Strava webhook invalidates the feed when activities change; deauthorization removes the saved account. Deleted/private activities are removed from the cache before refreshing. Only activity IDs and the profile URL reach the public feed endpoint. We do not copy photos or expose API tokens. Public API-to-embed use is not explicitly exempted by Strava's API agreement; platform approval remains unverified.
+The owner explicitly requested public API-based cards. This is not a private display: anyone can read the published summaries. Strava platform approval remains unverified.
+
 
 ### Owner connection
 

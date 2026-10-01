@@ -1,4 +1,4 @@
-// Only public activity IDs leave this module. Strava serves the embed contents.
+// Publish an allowlisted summary of this owner's public activities; credentials stay encrypted.
 const ORIGIN = 'https://erickbenitez.com';
 const API = 'https://www.strava.com/api/v3';
 const TYPES = new Set(['Run', 'TrailRun', 'VirtualRun', 'Walk', 'WeightTraining']);
@@ -80,7 +80,29 @@ export function publicActivities(activities, athleteId) {
     activity.visibility === 'everyone' && activity.private !== true &&
     TYPES.has(activity.sport_type || activity.type)
   ).sort((a, b) => Date.parse(b.start_date) - Date.parse(a.start_date))
-    .slice(0, 6).map(activity => ({id: String(activity.id)}));
+    .slice(0, 6).map(activity => ({
+      id: String(activity.id),
+      name: typeof activity.name === 'string' ? activity.name.slice(0, 200) : 'Activity',
+      sport: activity.sport_type || activity.type,
+      startDate: Number.isFinite(Date.parse(activity.start_date)) ? activity.start_date : null,
+      timezone: typeof activity.timezone === 'string' ? activity.timezone.replace(/^\(GMT[^)]+\)\s*/, '') : 'UTC',
+      distance: metric(activity.distance),
+      movingTime: metric(activity.moving_time),
+      elapsedTime: metric(activity.elapsed_time),
+      elevation: metric(activity.total_elevation_gain),
+      photo: publicPhoto(activity.photos?.primary?.urls),
+    }));
+}
+const metric = value => typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : 0;
+export function publicPhoto(urls) {
+  for (const value of Object.values(urls || {}).reverse()) {
+    try {
+      const url = new URL(value);
+      if (url.protocol === 'https:' && !url.username && !url.password &&
+          (url.hostname === 'd3nn82uaxijpm6.cloudfront.net' || url.hostname.endsWith('.strava.com'))) return url.href;
+    } catch {}
+  }
+  return null;
 }
 async function sync(env, force = false) {
   const stamp = now();
@@ -97,8 +119,23 @@ async function sync(env, force = false) {
     const activities = await response.json();
     if (!Array.isArray(activities)) throw new Error('Invalid activity list');
     const feed = publicActivities(activities, auth.athleteId);
+    // The summary endpoint omits photos. Fetch details only for cards with photos.
+    await Promise.all(feed.map(async (item, index) => {
+      const summary = activities.find(activity => String(activity.id) === item.id);
+      if (!summary?.total_photo_count) return;
+      try {
+        const detailResponse = await fetch(`${API}/activities/${item.id}`, {
+          headers: {authorization: `Bearer ${accessToken}`}, signal: AbortSignal.timeout(5000)
+        });
+        if (detailResponse.status === 404) { feed[index] = null; return; }
+        if (!detailResponse.ok) return; // A missing photo must not hide a valid activity.
+        const detail = await detailResponse.json();
+        const safe = publicActivities([detail], auth.athleteId)[0];
+        feed[index] = safe?.id === item.id ? safe : null;
+      } catch { /* Render summary without a photo during a transient failure. */ }
+    }));
     await env.DB.prepare('UPDATE strava_state SET feed = ?, synced_at = ?, lock_until = 0 WHERE id = 1 AND lock_until = ? AND revision = ?')
-      .bind(JSON.stringify(feed), stamp, stamp + 60, lease.revision).run();
+      .bind(JSON.stringify(feed.filter(Boolean)), stamp, stamp + 60, lease.revision).run();
   } catch {
     // Back off after upstream failures and avoid serving stale personal data.
     await env.DB.prepare('UPDATE strava_state SET lock_until = ? WHERE id = 1 AND lock_until = ?')
@@ -108,7 +145,9 @@ async function sync(env, force = false) {
 }
 async function feed(env) {
   if (!env.DB || !env.STRAVA_ENCRYPTION_KEY) return reply({connected: false, activities: []});
-  await sync(env);
+  const before = await stateRow(env);
+  const oldFormat = before && JSON.parse(before.feed).some(item => !item.sport);
+  await sync(env, Boolean(oldFormat));
   const row = await stateRow(env);
   if (!row) return reply({connected: false, activities: []});
   const auth = await unseal(env, row.encrypted);
