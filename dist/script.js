@@ -176,7 +176,7 @@ if (spotifyCard) {
       if (!track.isPlaying) {
         title.textContent = '';
         artist.textContent = '';
-        art.innerHTML = '';
+        art.innerHTML = '<svg viewBox="0 0 48 48" width="40" height="40" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 33V13l19-4v20M20 19l19-4"/><ellipse cx="14" cy="34" rx="6" ry="4"/><ellipse cx="33" cy="30" rx="6" ry="4"/></svg>';
         link.hidden = true;
         updateProgress(track);
         return;
