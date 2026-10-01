@@ -1,5 +1,5 @@
 const clock=document.querySelector('#clock');
-function tick(){clock.textContent=new Intl.DateTimeFormat('en-US',{timeZone:'America/Los_Angeles',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date())+' PT';}
+function tick(){const now=new Date();const date=new Intl.DateTimeFormat('en-US',{timeZone:'America/Los_Angeles',month:'short',day:'numeric',year:'numeric'}).format(now);clock.textContent=date+' · '+new Intl.DateTimeFormat('en-US',{timeZone:'America/Los_Angeles',hour:'2-digit',minute:'2-digit',hour12:false}).format(now)+' PT';}
 tick();setInterval(tick,60000);
 fetch('/api/github/contributions').then(r=>r.ok?r:fetch('/assets/studio/contributions.json')).then(r=>{if(!r.ok)throw Error();return r.json()}).then(data=>{
  document.querySelector('#snapshot').textContent='Updated '+data.updated;
