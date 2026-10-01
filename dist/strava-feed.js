@@ -18,28 +18,25 @@ if (section) {
       // Public tokens from Strava's "Embed on Blog" codes, never OAuth credentials.
       const embeds = await fetch('/strava-embeds.json', {signal: AbortSignal.timeout(5000)})
         .then(response => response.ok ? response.json() : {}).catch(() => ({}));
-      status.textContent = data.unavailable ? 'Activity updates are temporarily unavailable. You can still visit my Strava profile.' : activities.length ? '' : 'No public activities to share yet.';
+      // Only create cards when the official public embed code is complete.
+      const ready = activities.filter(item => typeof embeds[item.id] === 'string' && /^[A-Za-z0-9_-]+$/.test(embeds[item.id]));
+      status.textContent = data.unavailable ? 'Activity updates are temporarily unavailable. You can still visit my Strava profile.' : ready.length ? '' : 'Visit my Strava profile for my latest activities.';
       // Avoid recreating active embeds if the list has not changed.
-      const signature = activities.map(item => `${item.id}:${embeds[item.id] || ''}`).join(',');
+      const signature = ready.map(item => `${item.id}:${embeds[item.id] || ''}`).join(',');
       if (list.dataset.ids === signature) return;
       list.dataset.ids = signature;
       list.replaceChildren();
-      for (const activity of activities) {
+      for (const activity of ready) {
         const card = document.createElement('article');
         card.className = 'strava-activity';
         const frame = document.createElement('div');
         const token = embeds[activity.id];
-        if (typeof token === 'string' && /^[A-Za-z0-9_-]+$/.test(token)) {
-          frame.className = 'strava-embed-placeholder';
-          frame.dataset.embedType = 'activity';
-          frame.dataset.embedId = activity.id;
-          frame.dataset.style = 'standard';
-          frame.dataset.fromEmbed = 'false';
-          frame.dataset.token = token;
-        } else {
-          frame.className = 'strava-activity-fallback';
-          frame.textContent = 'A new activity on Strava';
-        }
+        frame.className = 'strava-embed-placeholder';
+        frame.dataset.embedType = 'activity';
+        frame.dataset.embedId = activity.id;
+        frame.dataset.style = 'standard';
+        frame.dataset.fromEmbed = 'false';
+        frame.dataset.token = token;
         const link = document.createElement('a');
         link.href = `https://www.strava.com/activities/${activity.id}`;
         link.textContent = 'View activity on Strava ↗';
@@ -52,7 +49,7 @@ if (section) {
         script.id = 'strava-embed-loader';
         script.src = 'https://strava-embeds.com/embed.js';
         script.onload = () => list.querySelectorAll('iframe').forEach(frame => {
-          frame.title = 'Strava activity'; frame.loading = 'lazy';
+          frame.title = 'Strava activity'; frame.loading = 'eager';
         });
         script.onerror = () => { status.textContent = 'Use the activity links below if the embeds cannot load.'; };
         document.body.append(script);
