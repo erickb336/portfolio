@@ -80,3 +80,9 @@ Credentials and rotating tokens are encrypted with AES-GCM before D1 storage. Se
 ### Development
 
 Run `npm ci` once, `npm test` for the Strava checks, and `npm run build` to bundle the Worker and prepare static assets. The static preview does not run Strava or Spotify endpoints. Server source lives in `server/`; `dist/server/index.js` is generated. Database schema is in `db/schema.ts`; generate append-only migrations with `npm run db:generate`.
+
+## Studio design
+
+The published home, About, and Journal pages use a dark-only charcoal theme in `dist/assets/studio/`. Existing photo carousels, centered photo dialogs, book controls, Spotify polling, and Strava feeds are preserved. The home page includes the full experience timeline and all six projects.
+
+The GitHub calendar loads public contribution counts through `/api/github/contributions`, cached for six hours at the edge. It needs no token. A dated bundled snapshot is the fallback if GitHub is unavailable or changes its calendar markup. No private repository metadata is fetched.

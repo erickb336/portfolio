@@ -1,3 +1,4 @@
+import { githubContributions } from './github.js';
 import { handleStrava } from './strava.js';
 const SPOTIFY_ACCOUNTS = 'https://accounts.spotify.com';
 const SPOTIFY_API = 'https://api.spotify.com/v1';
@@ -59,6 +60,7 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     try {
+      if (url.pathname === '/api/github/contributions') return githubContributions(request, ctx);
       const strava = await handleStrava(request, env, ctx);
       if (strava) return strava;
       if (url.pathname === '/api/spotify') {
