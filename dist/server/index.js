@@ -1,9 +1,13 @@
 // server/github.js
 async function githubContributions(request, ctx) {
-  const cache = globalThis.caches?.default;
+  let cache;
   const key2 = new Request(new URL("/api/github/contributions", request.url));
-  const cached = cache && await cache.match(key2);
-  if (cached) return cached;
+  try {
+    cache = await globalThis.caches?.open("portfolio-github-contributions-v1");
+    const cached = cache && await cache.match(key2);
+    if (cached) return cached;
+  } catch {
+  }
   try {
     const response = await fetch("https://github.com/users/erickb336/contributions", { headers: { "User-Agent": "ErickPortfolio", "Accept": "text/html" }, signal: AbortSignal.timeout(8e3) });
     if (!response.ok) throw new Error("Unavailable");
@@ -18,7 +22,8 @@ async function githubContributions(request, ctx) {
     }).sort((a, b) => a.date.localeCompare(b.date));
     if (days.length < 350 || days.length > 380 || days.some((d) => !/^\d{4}-\d{2}-\d{2}$/.test(d.date) || !Number.isInteger(d.count) || d.level < 0 || d.level > 4)) throw new Error("Invalid calendar");
     const result = Response.json({ days, total: days.reduce((n, d) => n + d.count, 0), updated: (/* @__PURE__ */ new Date()).toISOString().slice(0, 10) }, { headers: { "Cache-Control": "public, max-age=3600, s-maxage=21600" } });
-    if (cache) ctx.waitUntil(cache.put(key2, result.clone()));
+    if (cache) ctx.waitUntil(Promise.resolve().then(() => cache.put(key2, result.clone())).catch(() => {
+    }));
     return result;
   } catch {
     return Response.json({ error: "calendar_unavailable" }, { status: 503 });
@@ -188,11 +193,13 @@ async function sync(env, force = false) {
     logFailure();
   }
 }
-async function feed(env) {
+async function feed(env, ctx) {
   if (!env.DB || !env.STRAVA_ENCRYPTION_KEY) return reply({ connected: false, activities: [] });
   const before = await stateRow(env);
   const oldFormat = before && JSON.parse(before.feed).some((item) => item.mediaVersion !== 3);
-  await sync(env, Boolean(oldFormat));
+  const refresh = sync(env, Boolean(oldFormat));
+  ctx?.waitUntil?.(refresh);
+  await refresh;
   const row = await stateRow(env);
   if (!row) return reply({ connected: false, activities: [] });
   const auth = await unseal(env, row.encrypted);
@@ -315,7 +322,7 @@ async function handleStrava(request, env, ctx) {
   const path = new URL(request.url).pathname;
   if (!path.startsWith("/api/strava") && !path.startsWith("/strava/")) return null;
   try {
-    if (path === "/api/strava" && request.method === "GET") return await feed(env);
+    if (path === "/api/strava" && request.method === "GET") return await feed(env, ctx);
     if (path === "/strava/setup" && request.method === "GET") return setupPage();
     if (path === "/strava/connect" && request.method === "POST") return await connect(request, env);
     if (path === "/strava/callback" && request.method === "GET") return await callback(request, env);

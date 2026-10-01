@@ -158,11 +158,13 @@ async function sync(env, force = false) {
     logFailure();
   }
 }
-async function feed(env) {
+async function feed(env, ctx) {
   if (!env.DB || !env.STRAVA_ENCRYPTION_KEY) return reply({connected: false, activities: []});
   const before = await stateRow(env);
   const oldFormat = before && JSON.parse(before.feed).some(item => item.mediaVersion !== 3);
-  await sync(env, Boolean(oldFormat));
+  const refresh = sync(env, Boolean(oldFormat));
+  ctx?.waitUntil?.(refresh);
+  await refresh;
   const row = await stateRow(env);
   if (!row) return reply({connected: false, activities: []});
   const auth = await unseal(env, row.encrypted);
@@ -269,7 +271,7 @@ export async function handleStrava(request, env, ctx) {
   const path = new URL(request.url).pathname;
   if (!path.startsWith('/api/strava') && !path.startsWith('/strava/')) return null;
   try {
-    if (path === '/api/strava' && request.method === 'GET') return await feed(env);
+    if (path === '/api/strava' && request.method === 'GET') return await feed(env, ctx);
     if (path === '/strava/setup' && request.method === 'GET') return setupPage();
     if (path === '/strava/connect' && request.method === 'POST') return await connect(request, env);
     if (path === '/strava/callback' && request.method === 'GET') return await callback(request, env);

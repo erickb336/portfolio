@@ -12,3 +12,9 @@ test('public calendar extracts counts and rejects broken upstream markup',async(
  assert.equal((await githubContributions(new Request('https://erickbenitez.com/api/github/contributions'),{waitUntil(){}})).status,503);
  }finally{globalThis.fetch=original;}
 });
+
+test('uses named cache without accessing forbidden default cache',async()=>{
+ const original=globalThis.caches;
+ globalThis.caches={get default(){throw new Error('Forbidden');},async open(name){assert.equal(name,'portfolio-github-contributions-v1');return {async match(){return Response.json({cached:true});}};}};
+ try{assert.deepEqual(await(await githubContributions(new Request('https://erickbenitez.com/api/github/contributions'),{})).json(),{cached:true});}finally{globalThis.caches=original;}
+});

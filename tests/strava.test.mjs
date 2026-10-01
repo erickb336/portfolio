@@ -91,3 +91,18 @@ test('loads all album photos after checking ownership and visibility, with safe 
   assert.equal(calls.filter(u=>u.includes('/photos?')).length,2);
  }finally{globalThis.fetch=original;}
 });
+
+test('feed retains refresh in worker context until upstream completes',async()=>{
+ const env=await fixture();const original=globalThis.fetch;let release;
+ const gate=new Promise(resolve=>{release=resolve;});const retained=[];
+ globalThis.fetch=async(url)=>{await gate;return String(url).endsWith('/oauth/token')?Response.json({access_token:'access',refresh_token:'rotated',expires_at:stamp()+21600}):Response.json([activity(1)]);};
+ try {
+  const response=handleStrava(request('/api/strava'),env,{waitUntil(p){retained.push(p);}});
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(retained.length,1);
+  release();await retained[0];
+  assert.equal((await(await response).json()).activities.length,1);
+  const row=await env.DB.prepare('SELECT * FROM strava_state').first();
+  assert.equal(row.lock_until,0);assert.equal((await unseal(env,row.encrypted)).refreshToken,'rotated');
+ } finally {release();globalThis.fetch=original;}
+});
