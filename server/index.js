@@ -1,3 +1,4 @@
+import { handleWorkstation } from './workstation/index.js';
 import { githubContributions } from './github.js';
 import { handleStrava } from './strava.js';
 const SPOTIFY_ACCOUNTS = 'https://accounts.spotify.com';
@@ -60,6 +61,8 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     try {
+      const workstation = await handleWorkstation(request, env);
+      if (workstation) return workstation;
       if (url.pathname === '/api/github/contributions') return githubContributions(request, ctx);
       const strava = await handleStrava(request, env, ctx);
       if (strava) return strava;

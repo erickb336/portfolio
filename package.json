@@ -5,9 +5,10 @@
   "scripts": {
     "test": "node --test tests/*.test.mjs",
     "db:generate": "drizzle-kit generate",
-    "build": "node scripts/prepare-worker-assets.mjs"
+    "build": "node scripts/compile-workstation-schema.mjs && node scripts/prepare-worker-assets.mjs"
   },
   "devDependencies": {
+    "ajv": "8.20.0",
     "drizzle-kit": "0.31.4",
     "drizzle-orm": "0.44.5",
     "esbuild": "0.25.12"

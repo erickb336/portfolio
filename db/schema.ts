@@ -12,3 +12,24 @@ export const stravaPending = sqliteTable('strava_pending', {
   encrypted: text('encrypted').notNull(),
   expiresAt: integer('expires_at').notNull(),
 });
+
+export const workstationLive = sqliteTable('workstation_live', {
+  id: integer('id').primaryKey(),
+  observedAt: integer('observed_at_ms').notNull(),
+  receivedAt: integer('received_at_ms').notNull(),
+  leaseUntil: integer('lease_until_ms').notNull(),
+  agentsActive: integer('agents_active'),
+  agentsCoverage: text('agents_coverage').notNull(),
+});
+export const workstationDaily = sqliteTable('workstation_daily', {
+  usageDate: text('usage_date').primaryKey(),
+  input: integer('input'), cachedInput: integer('cached_input'),
+  output: integer('output'), total: integer('total'),
+  coverage: text('coverage').notNull(),
+  observedAt: integer('observed_at_ms').notNull(),
+  receivedAt: integer('received_at_ms').notNull(),
+});
+export const workstationRate = sqliteTable('workstation_rate', {
+  id: integer('id').primaryKey(),
+  events: text('events').notNull(),
+});
