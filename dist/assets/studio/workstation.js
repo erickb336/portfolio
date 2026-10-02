@@ -3,7 +3,7 @@ export function deskView(data, failed=false) {
   const active=failed?null:data?.agents?.active;
   const partial=data?.agents?.coverage==='partial';
   const usage=data?.tokensToday;
-  const number=n=>new Intl.NumberFormat('en-US',{notation:'compact',maximumFractionDigits:1}).format(n);
+  const number=n=>new Intl.NumberFormat('en-US',{notation:'compact',minimumFractionDigits:3,maximumFractionDigits:3}).format(n);
   return {online,agents:Number.isInteger(active)?`${active}${partial?'+':''}`:'—',
     hint:failed?'Connection unavailable':data?.tracker==='connected'?(active===0?'No agents running':partial?'Partial coverage':'Across Claude + Codex'):'Tracker offline',
     tokens:Number.isFinite(usage?.total)?`${number(usage.total)}${usage.coverage==='partial'?'+':''}`:'—',
