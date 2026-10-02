@@ -1,22 +1,32 @@
-export function deskView(data, failed=false) {
-  const online=!failed&&data?.status==='online'&&data?.tracker==='connected';
-  const active=failed?null:data?.agents?.active;
-  const partial=data?.agents?.coverage==='partial';
-  const usage=data?.tokensToday;
-  const number=n=>{const decimals=n>=1e9?2:1;return new Intl.NumberFormat('en-US',{notation:'compact',minimumFractionDigits:decimals,maximumFractionDigits:decimals}).format(n);};
-  return {online,agents:Number.isInteger(active)?`${active}${partial?'+':''}`:'—',
-    hint:failed?'Connection unavailable':data?.tracker==='connected'?(active===0?'No agents running':partial?'Partial coverage':'Across Claude + Codex'):'Tracker offline',
-    tokens:Number.isFinite(usage?.total)?`${number(usage.total)}${usage.coverage==='partial'?'+':''}`:'—',
-    usage:usage?`${usage.usageDate} · Seattle${failed||data.tracker!=='connected'?' · last reported totals':''}`:'Today in Seattle · no usage reported',
-    heartbeat:failed?'→ Connection lost · retrying':data?.lastHeartbeatAt?`→ Last signal ${new Intl.DateTimeFormat('en-US',{timeZone:'America/Los_Angeles',hour:'numeric',minute:'2-digit',second:'2-digit',timeZoneName:'short'}).format(new Date(data.lastHeartbeatAt))}`:'→ Waiting for the first heartbeat'};
+export function compact(n) {
+  for(const [size,suffix] of [[1e12,'T'],[1e9,'B'],[1e6,'M'],[1e3,'k']])
+    if(n>=size)return (Math.floor(n*10/size)/10).toFixed(1)+suffix;
+  return String(n);
 }
-if(typeof document!=='undefined'&&document.querySelector('#workstation')) {
-  let last=null,busy=false;
-  const indicator=document.querySelector('[data-token-processing]');
-  function stopProcessing(){indicator?.classList.remove('is-processing');}
-  function showProcessing(){indicator?.classList.add('is-processing');}
-  const set=(key,value)=>{const el=document.querySelector(`[data-desk-${key}]`);if(!el)return;if(el.textContent!==value){el.textContent=value;if(['agents','tokens'].includes(key)&&!matchMedia('(prefers-reduced-motion: reduce)').matches)el.animate([{opacity:.35},{opacity:1}],{duration:650});}};
-  function render(failed=false){const v=deskView(last,failed);if(v.online)showProcessing();else stopProcessing();set('status',v.online?'● ONLINE':'○ OFFLINE');document.querySelector('[data-desk-status]').dataset.online=String(v.online);set('agents',v.agents);set('agent-hint',v.hint);set('tokens',v.tokens);set('usage',v.usage);set('heartbeat',v.heartbeat);}
-  async function refresh(){if(busy||document.hidden)return;busy=true;try{const r=await fetch('/api/workstation/status',{cache:'no-store',signal:AbortSignal.timeout(8000)});if(!r.ok)throw Error();const d=await r.json();if(d.schemaVersion!==1||!['online','offline'].includes(d.status))throw Error();last=d;render();}catch{render(true);}finally{busy=false;}}
-  refresh();setInterval(refresh,15000);document.addEventListener('visibilitychange',()=>{if(document.hidden){stopProcessing();}else{render(true);refresh();}});
+export function deskView(data,failed=false,elapsed=0) {
+  if(failed||!data)return {online:false,agents:'—',hint:'status unavailable',tokens:'—',line:'Agent count unknown',heartbeat:'Status endpoint not reachable'};
+  const {active,coverage}=data.agents,partial=coverage==='partial',usage=data.tokensToday;
+  const age=Math.max(0,Math.floor((Date.parse(data.asOf)-Date.parse(data.lastHeartbeatAt)+elapsed)/1000));
+  const ageText=age<120?`${age} second${age===1?'':'s'}`:age<7200?`${Math.floor(age/60)} minutes`:age<172800?`${Math.floor(age/3600)} hours`:`${Math.floor(age/86400)} days`;
+  return {online:data.status==='online'&&data.tracker==='connected',
+    agents:active===null?'—':partial?`${active}+`:String(active).padStart(2,'0'),
+    hint:active===null?(data.tracker==='connected'?'count unavailable':'tracker disconnected'):partial?'known subtotal':'connected agents',
+    tokens:usage?.total==null?'—':compact(usage.total)+(usage.coverage==='partial'?'+':''),
+    line:active===null?'Agent count unknown':partial&&active===0?'Agent count incomplete':active===0?'No agents running':`${partial?'At least ':''}${active} agent${active===1?'':'s'} active`,
+    heartbeat:data.lastHeartbeatAt?`Last heartbeat ${ageText} ago`:'No heartbeat yet'};
 }
+export function mountWorkstation(root, {document:doc=document,fetchStatus=()=>fetch('/api/workstation/status',{cache:'no-store',signal:AbortSignal.timeout(8000)}),clock=()=>performance.now()}={}) {
+  let latest=null,received=0,next=null,busy=false;
+  const set=(key,value)=>{const el=root.querySelector(`[data-desk-${key}]`);if(el)el.textContent=value;};
+  function render(){const v=deskView(latest,!latest,clock()-received);set('status',v.online?'● ONLINE':'● OFFLINE');root.querySelector('[data-desk-status]').dataset.online=String(v.online);set('agents',v.agents);set('agent-hint',v.hint);set('tokens',v.tokens);set('line',v.line);set('heartbeat',v.heartbeat);root.querySelector('[data-token-processing]')?.classList.toggle('is-processing',v.online&&!doc.hidden);}
+  async function poll(){clearTimeout(next);next=null;if(busy||doc.hidden)return;busy=true;
+    try{const r=await fetchStatus();if(!r.ok)throw Error();const d=await r.json();if(d.schemaVersion!==1||!['online','offline'].includes(d.status)||!d.agents)throw Error();latest=d;received=clock();}catch{latest=null;}
+    finally{busy=false;render();if(!doc.hidden)next=setTimeout(poll,5000);}
+  }
+  const visibility=()=>{if(doc.hidden){clearTimeout(next);next=null;render();}else poll();};
+  doc.addEventListener('visibilitychange',visibility);
+  const ticker=setInterval(()=>{if(!doc.hidden)render();},1000);
+  poll();
+  return ()=>{clearTimeout(next);clearInterval(ticker);doc.removeEventListener('visibilitychange',visibility);};
+}
+if(typeof document!=='undefined') {const root=document.querySelector('#workstation');if(root&&!root.hasAttribute('data-preview'))mountWorkstation(root);}

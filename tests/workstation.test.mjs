@@ -72,5 +72,49 @@ test('bundled Worker serves the contract without dynamic compilation',async()=>{
  const worker=(await import('../dist/server/index.js')).default;
  const env=fixture();const req=new Request('https://example.com/api/workstation/heartbeat',{method:'POST',headers:{authorization:`Bearer ${secret}`,'content-type':'application/json'},body:JSON.stringify({...message(),observedAt:new Date().toISOString(),usageDate:dateIn(Date.now(),'America/Los_Angeles')})});
  assert.equal((await worker.fetch(req,env,{})).status,204);
- const r=await worker.fetch(new Request('https://example.com/api/workstation/status'),env,{});assert.equal(r.headers.get('cache-control'),'no-store');assert.equal((await r.json()).status,'online');
+ const r=await worker.fetch(new Request('https://example.com/api/workstation/status'),env,{});assert.equal(r.headers.get('cache-control'),'public, max-age=2');assert.equal((await r.json()).status,'online');
+});
+
+test('Cache API keeps a status for two seconds; POST is never cached',async t=>{
+ const previous=globalThis.caches;let now=epoch,entry,puts=0;
+ globalThis.caches={default:{async match(){return entry&&now<entry.until?entry.response.clone():undefined;},async put(key,response){puts++;assert.equal(response.headers.get('cache-control'),'public, max-age=2');entry={until:now+2000,response};}}};
+ t.after(()=>{globalThis.caches=previous;});
+ const env=fixture();assert.equal((await status(env,now)).tracker,'never');
+ await post(env,message(),now);assert.equal(puts,1);assert.equal((await status(env,now)).tracker,'never');
+ now+=2000;assert.equal((await status(env,now)).tracker,'connected');assert.equal(puts,2);
+});
+test('named cache fallback works when the host forbids caches.default',async t=>{
+ const previous=globalThis.caches;let used=false;
+ globalThis.caches={get default(){throw Error('forbidden');},async open(name){assert.equal(name,'portfolio-workstation-v1');return {async match(){},async put(){used=true;}};}};
+ t.after(()=>{globalThis.caches=previous;});await status(fixture());assert.equal(used,true);
+});
+
+// Optional cross-repository parity: HEARTBEAT_REFERENCE=/path/to/agent-heartbeat npm test
+// Runs the same 15-step checklist through the mock and the real receiver with one fake clock.
+test('contract checklist matches the reference receiver', {skip:!process.env.HEARTBEAT_REFERENCE},async()=>{
+ const {createReceiver}=await import(process.env.HEARTBEAT_REFERENCE+'/mock/receiver.js');
+ const {Readable}=await import('node:stream');let now=epoch;const env=fixture();
+ const mock=createReceiver({secretSha256Hex:env.WORKSTATION_INGEST_SECRET_SHA256,now:()=>now});
+ async function compare(m,options={}) {
+  const body=options.body??JSON.stringify(m);const headers={authorization:`Bearer ${secret}`,'content-type':'application/json',...options.headers};
+  const req=Readable.from([Buffer.from(body)]);Object.assign(req,{method:'POST',url:'/api/workstation/heartbeat',headers});
+  let code,payload='';const res={writeHead(c){code=c;return this;},end(s=''){payload+=s;},destroy(){}};
+  await mock.handle(req,res);const actual=await post(env,m,now,options);assert.equal(actual.status,code);assert.equal(await actual.text(),payload);assert.deepEqual(await status(env,now),mock.snapshot());return code;
+ }
+ assert.deepEqual(await status(env,now),mock.snapshot());
+ assert.equal(await compare(message()),204);now+=1001;
+ const replay=message(1001);assert.equal(await compare(replay),204);assert.equal(await compare(replay),409);now+=1001;
+ await compare(message(),{headers:{authorization:'Bearer wrong'}});now+=1001;
+ await compare(message(),{headers:{'content-type':'text/plain'}});now+=1001;
+ await compare(message(),{body:' '.repeat(5000)});now+=1001;
+ await compare({...message(now-epoch),agents:{active:3,coverage:'complete',extra:'not echoed'}});now+=1001;
+ await compare(message(-600000));now+=1001;
+ await compare({...sample('daily-usage-correction'),observedAt:new Date(now).toISOString()});now+=1001;
+ await compare(message(now-epoch,{agents:{active:0,coverage:'complete'}}));now+=1001;
+ const burst=message(now-epoch),codes=[];for(let i=0;i<12;i++)codes.push(await compare(burst));assert.deepEqual(codes,[204,...Array(9).fill(409),429,429]);now+=1001;
+ await compare(message(now-epoch,{agents:{active:2,coverage:'partial'}}));now+=1001;
+ await compare(message(now-epoch,{ttlSeconds:0}));now+=1001;
+ await compare(message(now-epoch));now+=91000;assert.deepEqual(await status(env,now),mock.snapshot());assert.equal((await status(env,now)).tracker,'disconnected');
+ for(const name of readdirSync('contract/workstation/samples').filter(n=>n.startsWith('invalid-'))){now+=1001;await compare(sample(name.slice(0,-5)));}
+ await compare(message(),{body:'{'});
 });

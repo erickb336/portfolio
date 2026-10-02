@@ -77,14 +77,24 @@ export async function handleWorkstation(request,env,now=Date.now()) {
   if(!((path==='/api/workstation/status'&&request.method==='GET')||(path==='/api/workstation/heartbeat'&&request.method==='POST')))return reply('not_found',404);
   try {
     if(!env.DB)return reply('temporarily_unavailable',503);
-    if(path.endsWith('/status'))return Response.json(await snapshot(env.DB,now),{headers});
+    if(path.endsWith('/status')) {
+      let cache;
+      const key=new Request(new URL('/api/workstation/status',request.url));
+      // Sites may disable the default cache while allowing named caches.
+      try { cache=globalThis.caches?.default; } catch {}
+      if(!cache) { try { cache=await globalThis.caches?.open('portfolio-workstation-v1'); } catch {} }
+      try { const hit=cache&&await cache.match(key);if(hit)return hit; } catch {}
+      const response=Response.json(await snapshot(env.DB,now),{headers:{...headers,'Cache-Control':'public, max-age=2'}});
+      try { if(cache)await cache.put(key,response.clone()); } catch {}
+      return response;
+    }
     const hash=env.WORKSTATION_INGEST_SECRET_SHA256;
     if(typeof hash!=='string'||!/^[a-f0-9]{64}$/i.test(hash))return reply('not_configured',503);
     if(!await authorized(request,hash))return reply('unauthorized',401);
     if(!await permit(env.DB,now))return reply('rate_limited',429,{'Retry-After':'1'});
     if(request.headers.get('content-type')?.split(';')[0].trim().toLowerCase()!=='application/json')return reply('unsupported_media_type',415);
     const body=await readBody(request);
-    if(body.error)return reply(body.error,body.status);
+    if(body.error)return body.status===400?Response.json({error:'invalid',details:['/: not_json']},{status:400,headers}):reply(body.error,body.status);
     const result=validateMessage(body.value);
     if(!result.ok)return Response.json({error:'invalid',details:result.errors},{status:400,headers});
     const m=result.message;
