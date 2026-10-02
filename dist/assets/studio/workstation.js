@@ -12,7 +12,7 @@ export function deskView(data, failed=false) {
 }
 if(typeof document!=='undefined'&&document.querySelector('#workstation')) {
   let last=null,busy=false;
-  const set=(key,value)=>{document.querySelector(`[data-desk-${key}]`).textContent=value;};
+  const set=(key,value)=>{const el=document.querySelector(`[data-desk-${key}]`);if(!el)return;if(el.textContent!==value){el.textContent=value;if(['agents','tokens'].includes(key)&&!matchMedia('(prefers-reduced-motion: reduce)').matches)el.animate([{opacity:.35},{opacity:1}],{duration:650});}};
   function render(failed=false){const v=deskView(last,failed);set('status',v.online?'● ONLINE':'○ OFFLINE');document.querySelector('[data-desk-status]').dataset.online=String(v.online);set('agents',v.agents);set('agent-hint',v.hint);set('tokens',v.tokens);set('usage',v.usage);set('heartbeat',v.heartbeat);}
   async function refresh(){if(busy||document.hidden)return;busy=true;try{const r=await fetch('/api/workstation/status',{cache:'no-store',signal:AbortSignal.timeout(8000)});if(!r.ok)throw Error();const d=await r.json();if(d.schemaVersion!==1||!['online','offline'].includes(d.status))throw Error();last=d;render();}catch{render(true);}finally{busy=false;}}
   refresh();setInterval(refresh,15000);document.addEventListener('visibilitychange',()=>{if(!document.hidden){render(true);refresh();}});
