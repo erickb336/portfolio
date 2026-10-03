@@ -43,7 +43,7 @@ if (section) {
   };
   function card(activity) {
     const article = node('article', undefined, 'strava-activity strava-custom-card');
-    const type = activity.sport === 'WeightTraining' ? 'Weight training' : activity.sport === 'Walk' ? 'Walk' : 'Run';
+    const type = activity.sport.replace(/([a-z0-9])([A-Z])/g, '$1 $2');
     article.append(node('p', 'STRAVA · ' + type, 'strava-sport'), node('h3', activity.name));
     if (activity.startDate && Number.isFinite(Date.parse(activity.startDate))) {
       const time = node('time');
@@ -140,7 +140,7 @@ if (section) {
         profile.href = data.profileUrl; profile.hidden = false;
       }
       const activities = (data.activities || []).filter(item => /^\d+$/.test(item.id) && typeof item.name === 'string' &&
-        ['Run','TrailRun','VirtualRun','Walk','WeightTraining'].includes(item.sport)).slice(0, 6);
+        typeof item.sport === 'string' && /^[A-Za-z][A-Za-z0-9]{0,63}$/.test(item.sport)).slice(0, 6);
       status.textContent = data.unavailable ? 'Activity updates are temporarily unavailable. Visit my Strava profile for the latest.' : activities.length ? '' : 'No public activities to share yet.';
       const signature = JSON.stringify(activities);
       if (list.dataset.ids === signature) return;

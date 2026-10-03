@@ -1,7 +1,7 @@
 // Publish an allowlisted summary of this owner's public activities; credentials stay encrypted.
 const ORIGIN = 'https://erickbenitez.com';
 const API = 'https://www.strava.com/api/v3';
-const TYPES = new Set(['Run', 'TrailRun', 'VirtualRun', 'Walk', 'WeightTraining']);
+const validSport = value => typeof value === 'string' && /^[A-Za-z][A-Za-z0-9]{0,63}$/.test(value);
 const encoder = new TextEncoder();
 const now = () => Math.floor(Date.now() / 1000);
 const encode = bytes => btoa(String.fromCharCode(...new Uint8Array(bytes)));
@@ -78,7 +78,7 @@ export function publicActivities(activities, athleteId) {
     Number.isSafeInteger(activity.id) && activity.id > 0 &&
     String(activity.athlete?.id) === String(athleteId) &&
     activity.visibility === 'everyone' && activity.private !== true &&
-    TYPES.has(activity.sport_type || activity.type)
+    validSport(activity.sport_type || activity.type)
   ).sort((a, b) => Date.parse(b.start_date) - Date.parse(a.start_date))
     .slice(0, 6).map(activity => ({
       id: String(activity.id),
@@ -92,7 +92,7 @@ export function publicActivities(activities, athleteId) {
       elevation: metric(activity.total_elevation_gain),
       photo: publicPhoto(activity.photos?.primary?.urls),
       photos: [publicPhoto(activity.photos?.primary?.urls)].filter(Boolean),
-      mediaVersion: 3,
+      mediaVersion: 4,
       route: typeof activity.map?.summary_polyline === 'string' && activity.map.summary_polyline.length <= 20000 ? activity.map.summary_polyline : null,
     }));
 }
@@ -161,7 +161,7 @@ async function sync(env, force = false) {
 async function feed(env, ctx) {
   if (!env.DB || !env.STRAVA_ENCRYPTION_KEY) return reply({connected: false, activities: []});
   const before = await stateRow(env);
-  const oldFormat = before && JSON.parse(before.feed).some(item => item.mediaVersion !== 3);
+  const oldFormat = before && JSON.parse(before.feed).some(item => item.mediaVersion !== 4);
   const refresh = sync(env, Boolean(oldFormat));
   ctx?.waitUntil?.(refresh);
   await refresh;

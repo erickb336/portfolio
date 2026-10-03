@@ -4,10 +4,10 @@ import {deskView,compact,mountWorkstation} from '../dist/assets/studio/workstati
 const data={schemaVersion:1,status:'online',tracker:'connected',agents:{active:3,coverage:'complete'},tokensToday:{total:128499,coverage:'complete'},asOf:'2026-10-02T18:00:10Z',lastHeartbeatAt:'2026-10-02T18:00:00Z'};
 const settle=()=>new Promise(resolve=>setImmediate(resolve));
 test('contract display preserves unknown and lower bounds, and uses server heartbeat age',()=>{
- assert.equal(compact(999), '999');assert.equal(compact(128499),'128.4k');
+ assert.equal(compact(999), '999');assert.equal(compact(128499),'128.4K');
  assert.equal(deskView(data).agents,'03');assert.equal(deskView(data,false,5000).heartbeat,'Last heartbeat 15 seconds ago');
  assert.equal(deskView({...data,agents:{active:2,coverage:'partial'}}).agents,'2+');
- assert.equal(deskView({...data,tokensToday:{total:128499,coverage:'partial'}}).tokens,'128.4k+');
+ assert.equal(deskView({...data,tokensToday:{total:128499,coverage:'partial'}}).tokens,'128.4K+');
  assert.equal(deskView({...data,agents:{active:null,coverage:'unavailable'},tokensToday:null}).agents,'—');
  assert.equal(deskView(data,true).tokens,'—');
 });

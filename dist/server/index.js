@@ -1830,7 +1830,7 @@ async function githubContributions(request, ctx) {
 // server/strava.js
 var ORIGIN = "https://erickbenitez.com";
 var API = "https://www.strava.com/api/v3";
-var TYPES = /* @__PURE__ */ new Set(["Run", "TrailRun", "VirtualRun", "Walk", "WeightTraining"]);
+var validSport = (value) => typeof value === "string" && /^[A-Za-z][A-Za-z0-9]{0,63}$/.test(value);
 var encoder = new TextEncoder();
 var now = () => Math.floor(Date.now() / 1e3);
 var encode = (bytes) => btoa(String.fromCharCode(...new Uint8Array(bytes)));
@@ -1910,7 +1910,7 @@ async function token(env, auth) {
 }
 function publicActivities(activities, athleteId) {
   return activities.filter(
-    (activity) => Number.isSafeInteger(activity.id) && activity.id > 0 && String(activity.athlete?.id) === String(athleteId) && activity.visibility === "everyone" && activity.private !== true && TYPES.has(activity.sport_type || activity.type)
+    (activity) => Number.isSafeInteger(activity.id) && activity.id > 0 && String(activity.athlete?.id) === String(athleteId) && activity.visibility === "everyone" && activity.private !== true && validSport(activity.sport_type || activity.type)
   ).sort((a, b) => Date.parse(b.start_date) - Date.parse(a.start_date)).slice(0, 6).map((activity) => ({
     id: String(activity.id),
     name: typeof activity.name === "string" ? activity.name.slice(0, 200) : "Activity",
@@ -1923,7 +1923,7 @@ function publicActivities(activities, athleteId) {
     elevation: metric(activity.total_elevation_gain),
     photo: publicPhoto(activity.photos?.primary?.urls),
     photos: [publicPhoto(activity.photos?.primary?.urls)].filter(Boolean),
-    mediaVersion: 3,
+    mediaVersion: 4,
     route: typeof activity.map?.summary_polyline === "string" && activity.map.summary_polyline.length <= 2e4 ? activity.map.summary_polyline : null
   }));
 }
@@ -1993,7 +1993,7 @@ async function sync(env, force = false) {
 async function feed(env, ctx) {
   if (!env.DB || !env.STRAVA_ENCRYPTION_KEY) return reply2({ connected: false, activities: [] });
   const before = await stateRow(env);
-  const oldFormat = before && JSON.parse(before.feed).some((item) => item.mediaVersion !== 3);
+  const oldFormat = before && JSON.parse(before.feed).some((item) => item.mediaVersion !== 4);
   const refresh = sync(env, Boolean(oldFormat));
   ctx?.waitUntil?.(refresh);
   await refresh;

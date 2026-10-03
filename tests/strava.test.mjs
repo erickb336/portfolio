@@ -16,7 +16,7 @@ async function fixture(){const env={DB:database(),STRAVA_ENCRYPTION_KEY:'test-en
 const activity=(id,type='Run',visibility='everyone')=>({id,sport_type:type,visibility,athlete:{id:123},start_date:`2026-09-${id<10?'0':''}${id}T12:00:00Z`});
 test('includes public runs walks lifts, rejects followers private foreign and malformed activities',()=>{
  const input=[activity(1),activity(2,'Walk'),activity(3,'WeightTraining'),activity(4,'Run','followers_only'),{...activity(5),private:true},activity(6,'Ride'),{...activity(7),athlete:{id:999}},activity('bad')];
- assert.deepEqual(publicActivities(input,'123').map(a=>a.id),['3','2','1']);
+ assert.deepEqual(publicActivities(input,'123').map(a=>a.id),['6','3','2','1']);
  assert.deepEqual(publicActivities([{...activity(8),visibility:undefined}],'123'),[]);
 });
 test('tokens are encrypted with authenticated encryption',async()=>{
@@ -87,7 +87,7 @@ test('loads all album photos after checking ownership and visibility, with safe 
   const result=await(await handleStrava(request('/api/strava'),env,{})).json();
   assert.deepEqual(result.activities.find(a=>a.id==='1').photos,[one,two]);
   assert.deepEqual(result.activities.find(a=>a.id==='2').photos,[one]);
-  assert.equal(result.activities[0].mediaVersion,3);
+  assert.equal(result.activities[0].mediaVersion,4);
   assert.equal(calls.filter(u=>u.includes('/photos?')).length,2);
  }finally{globalThis.fetch=original;}
 });
@@ -105,4 +105,12 @@ test('feed retains refresh in worker context until upstream completes',async()=>
   const row=await env.DB.prepare('SELECT * FROM strava_state').first();
   assert.equal(row.lock_until,0);assert.equal((await unseal(env,row.encrypted)).refreshToken,'rotated');
  } finally {release();globalThis.fetch=original;}
+});
+
+test('all public sport types are supported without allowing private activities',()=>{
+ for(const sport of ['Ride','VirtualRide','EBikeRide','MountainBikeRide','Swim','Hike','Yoga','Workout','Rowing','AlpineSki','FutureSport']) {
+  assert.equal(publicActivities([activity(1,sport)],123)[0].sport,sport);
+  assert.equal(publicActivities([activity(1,sport,'followers_only')],123).length,0);
+ }
+ assert.equal(publicActivities([activity(1,'<script>')],123).length,0);
 });

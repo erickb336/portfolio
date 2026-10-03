@@ -45,7 +45,7 @@ test('route decoder handles valid coordinates and rejects malformed or oversized
 });
 
 test('run and walk carousels toggle map/photo and wrap without replacing the media frame',async()=>{
- for(const sport of ['Run','Walk']){
+ for(const sport of ['Run','Walk','Ride','VirtualRide','Swim','Hike','Yoga','Workout','FutureSport']){
   const element=tag=>({tag,dataset:{},children:[],events:{},setAttribute(k,v){this[k]=v;},addEventListener(k,v){this.events[k]=v;},append(...x){this.children.push(...x);},replaceChildren(...x){this.children=x;}});
   const list=element(),status=element(),profile=element(),section=element();
   section.querySelector=s=>({'[data-activity-list]':list,'[data-activity-status]':status,'[data-strava-profile]':profile})[s];

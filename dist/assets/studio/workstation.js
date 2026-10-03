@@ -1,6 +1,6 @@
 export function compact(n) {
   for(const [size,suffix] of [[1e12,'T'],[1e9,'B'],[1e6,'M'],[1e3,'k']])
-    if(n>=size)return (Math.floor(n*10/size)/10).toFixed(1)+suffix;
+    if(n>=size){const digits=suffix==='B'?2:1,factor=10**digits;return (Math.floor(n*factor/size)/factor).toFixed(digits)+(suffix==='k'?'K':suffix);}
   return String(n);
 }
 export function deskView(data,failed=false,elapsed=0) {
@@ -18,7 +18,7 @@ export function deskView(data,failed=false,elapsed=0) {
 export function mountWorkstation(root, {document:doc=document,fetchStatus=()=>fetch('/api/workstation/status',{cache:'no-store',signal:AbortSignal.timeout(8000)}),clock=()=>performance.now()}={}) {
   let latest=null,received=0,next=null,busy=false;
   const set=(key,value)=>{const el=root.querySelector(`[data-desk-${key}]`);if(el)el.textContent=value;};
-  function render(){const v=deskView(latest,!latest,clock()-received);set('status',v.online?'● ONLINE':'● OFFLINE');root.querySelector('[data-desk-status]').dataset.online=String(v.online);set('agents',v.agents);set('agent-hint',v.hint);set('tokens',v.tokens);set('line',v.line);set('heartbeat',v.heartbeat);root.querySelector('[data-token-processing]')?.classList.toggle('is-processing',v.online&&!doc.hidden);}
+  function render(){const v=deskView(latest,!latest,clock()-received);set('status',v.online?'● ONLINE':'● OFFLINE');root.querySelector('[data-desk-status]').dataset.online=String(v.online);set('agents',root.classList?.contains('desk-mini')?v.agents.replace(/^0(?=\d)/,''):v.agents);set('agent-hint',v.hint);set('tokens',v.tokens);set('line',v.line);set('heartbeat',v.heartbeat);root.querySelector('[data-token-processing]')?.classList.toggle('is-processing',v.online&&!doc.hidden);}
   async function poll(){clearTimeout(next);next=null;if(busy||doc.hidden)return;busy=true;
     try{const r=await fetchStatus();if(!r.ok)throw Error();const d=await r.json();if(d.schemaVersion!==1||!['online','offline'].includes(d.status)||!d.agents)throw Error();latest=d;received=clock();}catch{latest=null;}
     finally{busy=false;render();if(!doc.hidden)next=setTimeout(poll,5000);}
