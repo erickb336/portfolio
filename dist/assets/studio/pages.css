@@ -1,3 +1,28 @@
 /* Shared Studio treatment for the existing About and Journal content. */
 .studio-page{background:#090a0b;color:#eceeea;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.studio-page .wrap{max-width:880px;padding-inline:40px}.studio-page .site-header{height:auto;min-height:80px;margin:auto;position:sticky;top:0;padding-block:20px;background:#090a0bf2;backdrop-filter:blur(24px);border-bottom:1px solid var(--line)}.studio-page .site-header nav{margin-left:auto;font-family:inherit;font-size:14px;gap:24px}.studio-page .site-header nav a[aria-current=page]{color:var(--text);border:0}.studio-page .page-intro{padding:48px 0 34px}.studio-page .page-intro h1{font-size:38px;letter-spacing:-1.5px;line-height:1.2;margin:12px 0}.studio-page .page-intro>p{font-size:16px;line-height:1.8;color:var(--muted)}.studio-page h1>span:not(.accent){color:var(--text);text-shadow:none}.studio-page .section{display:block;padding:34px 0;border-top:1px solid var(--line);border-bottom:0}.studio-page .section-label{margin-bottom:24px}.studio-page .section-label h2{font-size:22px;line-height:1.3;letter-spacing:-.5px;margin:8px 0}.studio-page .section-label>span{font-size:11px;color:var(--muted)}.studio-page .lead{font-size:18px;line-height:1.8;letter-spacing:0}.studio-page #about{display:grid;grid-template-columns:200px 1fr;gap:30px}.studio-page .about-profile-photo{display:block;width:180px;max-width:100%;height:auto;aspect-ratio:1;object-fit:cover;border-radius:12px}.studio-page .facts{gap:20px}.studio-page .facts p{font-size:14px}.studio-page .reading-shelves{border:1px solid var(--line);border-radius:12px;padding:0 22px;background:var(--panel);gap:0}.studio-page .reading-shelf{padding:24px 0;border:0;border-top:1px solid var(--line);background:none}.studio-page .reading-shelf:first-child{border:0}.studio-page .reading-shelf h3{font-size:16px;color:var(--text)}.studio-page .reading-empty{font-size:14px}.studio-page .book-card{border-radius:8px;flex-basis:180px;background:var(--bg);padding:14px}.studio-page .book-cover{height:210px;background:none}.studio-page .book-card h4{font-size:14px}.studio-page .book-card summary{display:list-item}.studio-page .book-summary-link{font-size:12px}.studio-page .book-card details p{margin:12px 0}.studio-page #milestones .section-content{grid-template-columns:1fr;gap:14px}.studio-page .milestone{border-radius:12px;padding:24px}.studio-page .milestone>div{display:grid;grid-template-columns:90px 1fr;column-gap:20px}.studio-page .milestone-stat{grid-row:1/3;font-size:44px;margin:0;letter-spacing:-2px}.studio-page .milestone-stat small{display:block;letter-spacing:0;margin-top:8px}.studio-page .milestone p{grid-column:2;font-size:14px}.studio-page .milestone h3{font-size:18px;margin-bottom:10px}.studio-page .photo-collection{grid-template-columns:240px minmax(0,1fr);gap:28px}.studio-page .photo-prose h2{font-size:24px;line-height:1.2;letter-spacing:-.7px}.studio-page .photo-prose p{font-size:15px;color:var(--muted)}.studio-page .photo-card{border-radius:12px;overflow:hidden}.studio-page .photo-card img{background:#111315}.studio-page .photo-card figcaption{font:13px/1.6 inherit}.studio-page .photo-lightbox{border-radius:14px;background:#111315}.studio-page .photo-lightbox::backdrop{background:#000c}.studio-page .sample-footer{font-family:inherit;font-size:12px}.studio-page footer nav{font-size:12px}.studio-page .strava-custom-card h3{font-size:18px}.studio-page .photo-collection + .photo-collection{margin-top:36px;padding-top:36px}.studio-page .photo-prose .eyebrow{color:var(--muted)}
 @media(max-width:640px){.studio-page .wrap{padding-inline:22px}.studio-page .site-header{flex-wrap:nowrap;gap:16px;min-height:72px}.studio-page .site-header nav{order:initial;width:auto;gap:16px;font-size:13px}.studio-page #about{grid-template-columns:1fr}.studio-page .about-profile-photo{width:140px}.studio-page .page-intro h1{font-size:32px}.studio-page .photo-collection{grid-template-columns:minmax(0,1fr)}.studio-page .photo-prose{margin:0}.studio-page .facts{grid-template-columns:1fr 1fr}.studio-page .milestone>div{grid-template-columns:65px 1fr;gap:0 15px}.studio-page .reading-shelves{padding:0 16px}.studio-page .sample-footer nav{gap:16px}.studio-page .photo-card img{max-height:65vh}.studio-page .strava-activities{grid-template-columns:1fr}}
+
+/* Keep About content independent of the homepage's compact widgets. */
+.about-page #about > *, .about-page .section-content {min-width:0}
+.about-page .section-content > p {font-size:16px;line-height:1.8}
+.about-page .section-content > .lead {font-size:18px;color:var(--text)}
+.about-page .facts p {font-size:16px;overflow-wrap:anywhere}
+.about-page #reading .reading-shelves {gap:0}
+.about-page .book-card details {border-bottom:0;padding:12px 0 0}
+.about-page .book-card summary {display:block;list-style:none;font-size:14px;line-height:1.6}
+.about-page .book-card summary::before {content:'+';display:inline-block;width:1.2em}
+.about-page .book-card details[open] summary::before {content:'−'}
+.about-page .book-card details p {margin:12px 0 0;font-size:14px;line-height:1.7}
+.about-page .book-summary-link {font-size:14px}
+.about-page .book-shelf-controls button {border-radius:6px}
+.about-page .milestone p {font-size:16px;line-height:1.8}
+.about-page .portfolio-header nav > a {display:block}
+@media(max-width:380px){
+ .about-page .portfolio-header {flex-wrap:wrap}
+ .about-page .portfolio-header nav {width:100%;justify-content:space-between;font-size:14px;gap:8px}
+ .about-page .facts {grid-template-columns:1fr}
+ .about-page .book-shelf-header {flex-wrap:wrap}
+ .about-page .milestone > div {grid-template-columns:1fr;gap:12px}
+ .about-page .milestone-stat {grid-row:auto}
+ .about-page .milestone p {grid-column:1}
+}
