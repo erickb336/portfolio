@@ -11,17 +11,12 @@
 
 .intro-meta .desk-mini{order:0}.intro-meta .location{order:1;margin-left:auto}
 
-/* On phones, time and workstation activity have separate rows. */
+/* Stack metadata on phones while preserving the original text treatment. */
 @media(max-width:640px){
- .studio-home .intro-meta {display:flex;flex-direction:column;align-items:stretch;gap:16px;margin-bottom:24px}
- .studio-home .intro-meta .location {order:0;display:grid;grid-template-columns:minmax(0,1fr);gap:4px;margin-left:0;font-size:14px;line-height:1.6;letter-spacing:0}
- .studio-home .intro-meta .location > [aria-hidden] {display:none}
- .studio-home #clock {min-width:0;margin:0;font-size:12px;line-height:1.7;white-space:normal;overflow-wrap:anywhere}
- .studio-home .intro-meta .desk-mini {order:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:12px 16px;width:100%;min-width:0;margin:0;padding:14px 16px;border:1px solid var(--line);border-radius:8px;background:var(--panel);font-size:14px;line-height:1.6}
- .studio-home .desk-mini > span {min-width:0;white-space:normal;overflow-wrap:anywhere}
- .studio-home .desk-mini > [data-desk-status] {grid-column:1/-1;font-size:12px;padding-bottom:10px;border-bottom:1px solid var(--line)}
- .studio-home .desk-mini b {display:block;font-size:20px;line-height:1.4;margin-bottom:3px}
- .studio-home .desk-mini .token-processing {margin-left:2px}
+ .studio-home .intro-meta {flex-direction:column;align-items:flex-start;gap:10px}
+ .studio-home .intro-meta .location {order:0;margin-left:0;max-width:100%;flex-wrap:wrap}
+ .studio-home .intro-meta .desk-mini {order:1;max-width:100%}
+ .studio-home #clock {white-space:normal}
  .studio-home .portfolio-header nav > a {display:block}
 }
 @media(max-width:380px){
