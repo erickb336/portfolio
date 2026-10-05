@@ -79,3 +79,5 @@
  .studio-home .project-visual:not(.generated-cover) {height:auto;aspect-ratio:3/2;overflow:hidden}
  .studio-home .project-visual:not(.generated-cover) img {display:block;width:100%;height:100%;object-fit:contain!important}
 }
+
+.zen-intro{display:grid;grid-template-columns:minmax(0,1fr) 220px;align-items:center;gap:16px}.zen-bio{min-width:0}.zen-companion{margin:0;text-align:center}.zen-companion img{display:block;width:100%;height:auto;filter:drop-shadow(0 8px 24px #263a5420)}.zen-companion figcaption{font:11px/1.6 ui-monospace,monospace;color:var(--muted);margin-top:10px}.zen-bio .identity{gap:16px}.zen-bio h1{font-size:28px}.zen-bio .social-row{flex-wrap:wrap}.zen-bio .education{margin-left:0;width:100%}@media(max-width:640px){.zen-intro{grid-template-columns:1fr;gap:24px}.zen-companion{width:160px;margin:0 auto}.zen-bio h1{font-size:25px}}

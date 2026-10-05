@@ -56,3 +56,20 @@
  .journal-page .portfolio-header nav {width:100%;justify-content:space-between;font-size:14px;gap:8px}
  .journal-page .photo-deck .deck-controls {gap:6px}
 }
+
+/* Consistent Journal rhythm: align stories with photos, without stacked margins. */
+.journal-page .page-intro{padding:40px 0 28px}
+.journal-page .page-intro>p{margin:12px 0 0}
+.journal-page .photo-collection{align-items:start;gap:32px}
+.journal-page .photo-deck{padding-top:0}
+.journal-page .photo-prose{padding-top:10px}
+.journal-page .photo-prose h3{margin:10px 0 14px}
+.journal-page .photo-collection+.photo-collection{margin-top:32px;padding-top:32px}
+.journal-page .photo-deck .deck-controls{margin-top:14px}
+.journal-page .sample-footer{margin-top:40px}
+@media(max-width:700px){
+ .journal-page .photo-collection{gap:20px}
+ .journal-page .photo-prose{padding-top:0}
+ .journal-page .page-intro{padding:28px 0 24px}
+ .journal-page .photo-collection+.photo-collection{margin-top:28px;padding-top:28px}
+}
