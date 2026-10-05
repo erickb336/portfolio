@@ -1,10 +1,10 @@
 /* One navigation layout shared by Work, About, and Journal. */
 .portfolio-header{box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:18px;width:calc(100% - 80px);max-width:798px;min-height:84px;margin:0 auto;padding:22px 0;position:sticky;top:0;z-index:20;background:#090a0be8;backdrop-filter:blur(24px);border-bottom:1px solid #ffffff0b;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-.portfolio-header .portfolio-mark{font-size:24px;font-weight:650;line-height:1.65;letter-spacing:-1.4px;color:#eceeea;text-decoration:none;border:0}
+.portfolio-header .portfolio-mark{font-size:24px;font-weight:650;line-height:1.65;letter-spacing:-1.4px;color:#eaeef3;text-decoration:none;border:0}
 .portfolio-header nav{display:flex;align-items:center;justify-content:flex-end;gap:25px;margin:0;padding:0;width:auto;order:initial;font:14px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:normal;text-transform:none}
-.portfolio-header nav a{display:block;color:#949a96;text-decoration:none;border:0;padding:0;white-space:nowrap}
-.portfolio-header nav a:hover,.portfolio-header nav a[aria-current=page]{color:#eceeea}
-.portfolio-header nav .portfolio-contact{border:1px solid #3c4143;border-radius:7px;padding:7px 12px;color:#eceeea}
+.portfolio-header nav a{display:block;color:#949ba5;text-decoration:none;border:0;padding:0;white-space:nowrap}
+.portfolio-header nav a:hover,.portfolio-header nav a[aria-current=page]{color:#eaeef3}
+.portfolio-header nav .portfolio-contact{border:1px solid #3c4143;border-radius:7px;padding:7px 12px;color:#eaeef3}
 @media(max-width:640px){.portfolio-header{width:calc(100% - 44px);min-height:76px;gap:12px;padding:18px 0}.portfolio-header nav{gap:12px;font-size:12px}.portfolio-header nav .portfolio-contact{padding:6px 8px}}
 @media(max-width:380px){.portfolio-header{gap:8px}.portfolio-header nav{gap:8px;font-size:11px}.portfolio-header .portfolio-mark{font-size:22px}}
 
