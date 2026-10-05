@@ -83,15 +83,15 @@
 .zen-intro{display:grid;grid-template-columns:minmax(0,1fr) 220px;align-items:center;gap:16px}.zen-bio{min-width:0}.zen-companion{margin:0;text-align:center}.zen-companion img{display:block;width:100%;height:auto;filter:drop-shadow(0 8px 24px #263a5420)}.zen-companion figcaption{font:11px/1.6 ui-monospace,monospace;color:var(--muted);margin-top:10px}.zen-bio .identity{gap:16px}.zen-bio h1{font-size:28px}.zen-bio .social-row{flex-wrap:wrap}.zen-bio .education{margin-left:0;width:100%}@media(max-width:640px){.zen-intro{grid-template-columns:1fr;gap:24px}.zen-companion{width:160px;margin:0 auto}.zen-bio h1{font-size:25px}}
 
 /* A small companion stays in his own lane, clear of content and links. */
-.baby-zen-playground{margin:24px 0 0;position:relative}
-.baby-zen-track{height:112px;position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
-.baby-zen-traveler{position:absolute;left:0;bottom:0;width:88px;height:117px;animation:baby-zen-travel 16s linear infinite}
-.baby-zen-facing{width:100%;height:100%;animation:baby-zen-turn 16s steps(1,end) infinite}
-.baby-zen-sprite{display:block;width:100%;height:100%;background:url('/assets/studio/images/baby-zen-run.png') 0 0/400% 100% no-repeat;image-rendering:pixelated;animation:baby-zen-stride .48s steps(4) infinite}
+.baby-zen-playground{margin:8px 0 0;position:relative}
+.baby-zen-track{height:76px;position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
+.baby-zen-traveler{position:absolute;left:0;bottom:0;width:56px;height:75px;animation:baby-zen-travel 8s linear infinite}
+.baby-zen-facing{width:100%;height:100%;animation:baby-zen-turn 8s steps(1,end) infinite}
+.baby-zen-sprite{display:block;width:100%;height:100%;background:url('/assets/studio/images/baby-zen-run.png') 0 0/400% 100% no-repeat;image-rendering:pixelated;animation:baby-zen-stride .32s steps(4) infinite}
 .baby-zen-pause{display:block;margin:10px 0 0 auto;border:0;background:none;color:var(--muted);font:11px/1.5 ui-monospace,monospace;padding:4px;cursor:pointer}
 .baby-zen-pause:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 .baby-zen-playground[data-paused] *{animation-play-state:paused!important}
-@keyframes baby-zen-travel{0%,100%{left:0}50%{left:calc(100% - 88px)}}
+@keyframes baby-zen-travel{0%,100%{left:0}50%{left:calc(100% - 56px)}}
 @keyframes baby-zen-turn{0%,100%{transform:scaleX(1)}50%{transform:scaleX(-1)}}
 @keyframes baby-zen-stride{to{background-position:133.333333% 0}}
 @media(prefers-reduced-motion:reduce){.baby-zen-playground *{animation:none!important}.baby-zen-pause{display:none}}
