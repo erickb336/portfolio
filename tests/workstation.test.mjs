@@ -118,3 +118,18 @@ test('contract checklist matches the reference receiver', {skip:!process.env.HEA
  for(const name of readdirSync('contract/workstation/samples').filter(n=>n.startsWith('invalid-'))){now+=1001;await compare(sample(name.slice(0,-5)));}
  await compare(message(),{body:'{'});
 });
+
+test('history exposes 30 aggregate days and preserves observed agent peaks across stale sends and corrections',async()=>{
+ const env=fixture();
+ const history=async()=>{const r=await handleWorkstation(new Request('https://example.com/api/workstation/history?ignored=value'),env,epoch);assert.equal(r.headers.get('cache-control'),'public, max-age=30');return r.json();};
+ let h=await history();assert.equal(h.days.length,30);assert.equal(h.days.at(-1).tokens,null);assert.equal(h.days.at(-1).agentsPeak,null);
+ await post(env,message());
+ await post(env,message(1000,{agents:{active:8,coverage:'partial'}}),epoch+1000);
+ await post(env,message(0,{agents:{active:100,coverage:'complete'}}),epoch+1000);
+ await post(env,message(2000,{agents:{active:0,coverage:'complete'}}),epoch+2000);
+ h=await history();assert.deepEqual(h.days.at(-1).agentsPeak,{active:8,coverage:'partial'});assert.equal(h.days.at(-1).tokens.total,128400);
+ assert.deepEqual(Object.keys(h.days.at(-1)).sort(),['agentsPeak','date','tokens']);
+ assert.deepEqual(Object.keys(h.days.at(-1).tokens).sort(),['cachedInput','coverage','input','output','total','usageDate']);
+ const correction={...message(3000),type:'dailyUsage'};delete correction.agents;delete correction.ttlSeconds;
+ await post(env,correction,epoch+3000);assert.deepEqual((await history()).days.at(-1).agentsPeak,{active:8,coverage:'partial'});
+});

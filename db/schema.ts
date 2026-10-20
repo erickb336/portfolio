@@ -33,3 +33,8 @@ export const workstationRate = sqliteTable('workstation_rate', {
   id: integer('id').primaryKey(),
   events: text('events').notNull(),
 });
+export const workstationAgentDaily = sqliteTable('workstation_agent_daily', {
+  usageDate: text('usage_date').primaryKey(),
+  peak: integer('peak').notNull(),
+  partial: integer('partial').notNull(),
+});

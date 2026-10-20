@@ -53,8 +53,12 @@ async function store(db,m,now) {
     agents_coverage=excluded.agents_coverage WHERE excluded.observed_at_ms>workstation_live.observed_at_ms RETURNING id`)
     .bind(observed,now,now+Math.min(m.ttlSeconds,300)*1000,m.agents.active,m.agents.coverage);
   // D1 batch is a transaction. The daily write only runs when its preceding live write won.
-  const daily=db.prepare(dailySql+'changes()=1'+dailyUpdate).bind(...args);
-  const results=await db.batch([live,daily]);
+  const peak=db.prepare(`INSERT INTO workstation_agent_daily(usage_date,peak,partial)
+    SELECT ?1,?2,?3 WHERE changes()=1 AND ?2 IS NOT NULL
+    ON CONFLICT(usage_date) DO UPDATE SET peak=max(peak,excluded.peak),partial=max(partial,excluded.partial)`)
+    .bind(m.usageDate,m.agents.active,m.agents.coverage==='partial'?1:0);
+  const daily=db.prepare(dailySql+'EXISTS(SELECT 1 FROM workstation_live WHERE observed_at_ms=?7 AND received_at_ms=?8)'+dailyUpdate).bind(...args);
+  const results=await db.batch([live,peak,daily]);
   return results[0].results.length>0;
 }
 
@@ -74,9 +78,25 @@ async function snapshot(db,now) {
 export async function handleWorkstation(request,env,now=Date.now()) {
   const path=new URL(request.url).pathname;
   if(!path.startsWith('/api/workstation/'))return null;
-  if(!((path==='/api/workstation/status'&&request.method==='GET')||(path==='/api/workstation/heartbeat'&&request.method==='POST')))return reply('not_found',404);
+  if(!(((path==='/api/workstation/status'||path==='/api/workstation/history')&&request.method==='GET')||(path==='/api/workstation/heartbeat'&&request.method==='POST')))return reply('not_found',404);
   try {
     if(!env.DB)return reply('temporarily_unavailable',503);
+    if(path.endsWith('/history')) {
+      let cache; try {cache=globalThis.caches?.default;}catch{}
+      if(!cache){try{cache=await globalThis.caches?.open('portfolio-workstation-v1');}catch{}}
+      const key=new Request(new URL('/api/workstation/history',request.url));
+      try{const hit=cache&&await cache.match(key);if(hit)return hit;}catch{}
+      const today=dateIn(now,ZONE),base=Date.parse(today+'T12:00:00Z');
+      const dates=Array.from({length:30},(_,i)=>new Date(base-(29-i)*86400000).toISOString().slice(0,10));
+      const result=await env.DB.batch([
+        env.DB.prepare('SELECT usage_date,input,cached_input,output,total,coverage FROM workstation_daily WHERE usage_date BETWEEN ? AND ? ORDER BY usage_date LIMIT 30').bind(dates[0],today),
+        env.DB.prepare('SELECT usage_date,peak,partial FROM workstation_agent_daily WHERE usage_date BETWEEN ? AND ? ORDER BY usage_date LIMIT 30').bind(dates[0],today)
+      ]);
+      const days=dates.map(date=>{const d=result[0].results.find(x=>x.usage_date===date),a=result[1].results.find(x=>x.usage_date===date);return {date,tokens:d?tokens(d):null,agentsPeak:a?{active:a.peak,coverage:a.partial?'partial':'complete'}:null};});
+      const response=Response.json({schemaVersion:1,timeZone:ZONE,today,days},{headers:{...headers,'Cache-Control':'public, max-age=30'}});
+      try{if(cache)await cache.put(key,response.clone());}catch{}
+      return response;
+    }
     if(path.endsWith('/status')) {
       let cache;
       const key=new Request(new URL('/api/workstation/status',request.url));
