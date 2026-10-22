@@ -25,6 +25,12 @@
 }
 
 /* Availability sits beside the role and wraps on narrow screens. */
-.identity-meta{display:flex;align-items:center;flex-wrap:wrap;gap:4px 16px;margin-bottom:7px}.identity-meta .eyebrow{margin:0}.identity-meta .contract-availability{margin:0;padding:0;font-size:11px}
+.identity-meta{display:flex;align-items:center;flex-wrap:wrap;gap:4px 16px;margin-bottom:7px}.identity-meta .eyebrow{margin:0}.identity-meta .contract-availability{margin:0;padding:0;font-size:11px;flex-wrap:nowrap}
 
 .identity-meta .contract-availability>.availability-separator{width:auto;height:auto;background:none;border-radius:0;color:var(--muted)}
+
+/* On phones, availability starts its own aligned line without a separator. */
+@media(max-width:640px){
+ .identity-meta .contract-availability{display:block;flex-basis:100%}
+ .identity-meta .contract-availability>.availability-separator{display:none}
+}
