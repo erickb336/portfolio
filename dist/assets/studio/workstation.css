@@ -14,8 +14,8 @@
 /* Stack metadata on phones while preserving the original text treatment. */
 @media(max-width:640px){
  .studio-home .intro-meta {flex-direction:column;align-items:flex-start;gap:10px}
- .studio-home .intro-meta .location {order:0;margin-left:0;max-width:100%;flex-wrap:wrap}
- .studio-home .intro-meta .desk-mini {order:1;max-width:100%}
+ .studio-home .intro-meta .location {order:1;margin-left:0;max-width:100%;flex-wrap:wrap}
+ .studio-home .intro-meta .desk-mini {order:0;max-width:100%}
  .studio-home #clock {white-space:normal}
  .studio-home .portfolio-header nav > a {display:block}
 }
