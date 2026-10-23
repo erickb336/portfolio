@@ -112,3 +112,10 @@
 @media(max-width:640px){.contract-services .services-lead{font-size:23px}.service-grid{grid-template-columns:minmax(0,1fr)}.services-inquiry{align-items:flex-start;flex-direction:column;gap:18px;padding:20px}.contract-kicker{font-size:9px}.services-bottom>p a{white-space:normal}}
 
 .life-grid:has(> .life-card:only-child){grid-template-columns:minmax(0,1fr)}
+
+/* A single About card uses the space as a portrait and introduction. */
+.life-card:only-child{display:grid;grid-template-columns:200px minmax(0,1fr);align-items:center}
+.life-card:only-child>div.life-image{height:220px;padding:16px;border-bottom:0;border-right:1px solid var(--line);background:var(--panel)}
+.life-card:only-child .life-portrait img{width:100%;height:100%;object-fit:cover;object-position:center 25%}
+.life-card:only-child>div:not(.life-image){padding:28px}
+@media(max-width:480px){.life-card:only-child{grid-template-columns:minmax(0,1fr)}.life-card:only-child>div.life-image{height:240px;border-right:0;border-bottom:1px solid var(--line)}.life-card:only-child .life-portrait img{width:auto;max-width:100%;object-fit:contain}.life-card:only-child>div:not(.life-image){padding:20px}}
