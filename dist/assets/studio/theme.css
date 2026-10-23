@@ -110,3 +110,5 @@
 .contact-description{max-width:550px;font-size:14px;color:var(--muted)}
 .contact-description a{color:var(--accent);text-decoration:underline;text-underline-offset:3px}
 @media(max-width:640px){.contract-services .services-lead{font-size:23px}.service-grid{grid-template-columns:minmax(0,1fr)}.services-inquiry{align-items:flex-start;flex-direction:column;gap:18px;padding:20px}.contract-kicker{font-size:9px}.services-bottom>p a{white-space:normal}}
+
+.life-grid:has(> .life-card:only-child){grid-template-columns:minmax(0,1fr)}

@@ -1,6 +1,6 @@
 # Erick Benitez-Ramos — Portfolio
 
-My personal website combines my software engineering portfolio with a journal about the people, places, and experiences that have shaped my life.
+My personal website showcases my software engineering work, background, and interests.
 
 **Live site:** [erickbenitez.com](https://erickbenitez.com)
 
@@ -9,7 +9,6 @@ My personal website combines my software engineering portfolio with a journal ab
 - Selected engineering work and career experience
 - Notes on what I’m currently building and exploring
 - An About page covering my background and interests
-- A photo journal featuring family, growing up, Korea, Mexico, and Seattle
 - Books I have read and want to read
 - Live Spotify activity with links to the current song and my profile
 - Search metadata, structured data, a sitemap, and social preview images
@@ -40,7 +39,6 @@ The pages and interactions work without installing dependencies or running a bui
 dist/
 ├── index.html          # Main portfolio page
 ├── about/              # About page
-├── journal/            # Photo journal
 ├── books/              # Bookshelf
 ├── photos/             # Optimized site photography
 ├── sample/             # Shared page styles
@@ -83,6 +81,6 @@ Run `npm ci` once, `npm test` for the Strava checks, and `npm run build` to bund
 
 ## Studio design
 
-The published home, About, and Journal pages use a dark-only charcoal theme in `dist/assets/studio/`. Existing photo carousels, centered photo dialogs, book controls, Spotify polling, and Strava feeds are preserved. The home page includes the full experience timeline and all six projects.
+The published home, About, and Activity pages use a dark-only charcoal theme in `dist/assets/studio/`. Existing photo carousels, centered photo dialogs, book controls, Spotify polling, and Strava feeds are preserved. The home page includes the full experience timeline and all six projects.
 
 The GitHub calendar loads public contribution counts through `/api/github/contributions`, cached for six hours at the edge. It needs no token. A dated bundled snapshot is the fallback if GitHub is unavailable or changes its calendar markup. No private repository metadata is fetched.
