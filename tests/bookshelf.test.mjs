@@ -12,7 +12,7 @@ test('both pages render the shared bookshelf and load the same behavior', () => 
     assert.equal((page.match(/src="\/book-reviews.js"/g) || []).length, 1);
     assert.equal((page.match(/href="\/assets\/studio\/bookshelf.css"/g) || []).length, 1);
     assert.equal((page.match(/id="finished-books"/g) || []).length, 1);
-    assert.equal((page.match(/class="book-card"/g) || []).length, 22);
+    assert.equal((page.match(/class="book-card"/g) || []).length, 25);
     assert.match(page, /<h4>Persuasion<\/h4>/);
   }
 });
