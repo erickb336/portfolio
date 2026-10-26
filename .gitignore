@@ -1,7 +1,7 @@
 dist/client/
 AGENTS.md
 drafts/
-node_modules/
+node_modules
 .env
 .env.*
 !.env.example
