@@ -4,7 +4,7 @@ const SPOTIFY_API = 'https://api.spotify.com/v1';
 function json(data, init = {}) {
   const headers = new Headers(init.headers);
   headers.set('content-type', 'application/json; charset=utf-8');
-  headers.set('cache-control', 'public, max-age=20, s-maxage=20');
+  headers.set('cache-control', 'public, max-age=5, s-maxage=5');
   return new Response(JSON.stringify(data), {...init, headers});
 }
 
@@ -34,22 +34,30 @@ function sanitizeTrack(payload, isPlaying, playedAt = null) {
   };
 }
 
+// Keep provider backoff internal; never forward its response body or headers wholesale.
+function providerFailure(response, error) {
+  const raw = response.headers.get('retry-after');
+  const seconds = raw && /^\d+$/.test(raw) ? Number(raw) : 0;
+  const retryAfter = Math.min(3600, Math.max(5, seconds));
+  return json({error}, {status: 503, headers: {'Retry-After': String(retryAfter)}});
+}
+
 async function nowPlaying(env) {
   if (!env.SPOTIFY_REFRESH_TOKEN) return json({error: 'not_connected'}, {status: 503});
   const tokenResponse = await spotifyToken(env, {grant_type: 'refresh_token', refresh_token: env.SPOTIFY_REFRESH_TOKEN});
-  if (!tokenResponse.ok) return json({error: 'token_refresh_failed'}, {status: 503});
+  if (!tokenResponse.ok) return providerFailure(tokenResponse, 'token_refresh_failed');
   const {access_token: accessToken} = await tokenResponse.json();
   if (typeof accessToken !== 'string' || !accessToken) return json({error: 'token_refresh_failed'}, {status: 503});
   const headers = {'authorization': `Bearer ${accessToken}`};
   const current = await fetch(`${SPOTIFY_API}/me/player/currently-playing`, {headers, signal: AbortSignal.timeout(5000)});
-  if (!current.ok) return json({error: 'playback_unavailable'}, {status: 503});
+  if (!current.ok) return providerFailure(current, 'playback_unavailable');
   if (current.status !== 204) {
     const payload = await current.json();
     const track = sanitizeTrack(payload, Boolean(payload.is_playing));
     if (track) return json(track);
   }
   const recent = await fetch(`${SPOTIFY_API}/me/player/recently-played?limit=1`, {headers, signal: AbortSignal.timeout(5000)});
-  if (!recent.ok) return json({error: 'playback_unavailable'}, {status: 503});
+  if (!recent.ok) return providerFailure(recent, 'playback_unavailable');
   const payload = await recent.json();
   const latest = payload.items?.[0];
   const track = sanitizeTrack(latest, false, latest?.played_at || null);
@@ -78,16 +86,18 @@ export async function spotify(request, env) {
   }
 
   let body, status;
+  let retryAfter = 5;
   try {
     const response = await nowPlaying(env);
     status = response.status;
+    retryAfter = Number(response.headers.get('Retry-After')) || 5;
     body = await response.json();
     if (response.ok && env.SPOTIFY_PROFILE_URL) body.profileUrl = env.SPOTIFY_PROFILE_URL;
   } catch {
     status = 503;
     body = {error: 'temporarily_unavailable'};
   }
-  const ttl = status === 200 || status === 404 ? 20 : 5;
+  const ttl = status === 200 || status === 404 ? 5 : retryAfter;
   // Store a 200 envelope so failures can also have a server-side cooldown.
   // Await the write before replying; no tokens or upstream errors enter it.
   try {

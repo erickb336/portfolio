@@ -7,11 +7,11 @@ function setup(t){let time=0,calls=0,entry;const oldFetch=globalThis.fetch,oldCa
  globalThis.fetch=async(url,options)=>{calls++;assert.ok(options.signal);return String(url).includes('/api/token')?Response.json({access_token:'DO_NOT_LEAK_ACCESS'}):Response.json({is_playing:true,progress_ms:100,item:{name:'Test song',artists:[{name:'Artist'}],duration_ms:10000}});};
  t.after(()=>{globalThis.fetch=oldFetch;globalThis.caches=oldCaches;});return {calls:()=>calls,advance:n=>time+=n};}
 const req=(suffix='',method='GET')=>new Request('https://erickbenitez.com/api/spotify'+suffix,{method,headers:{'Cache-Control':'no-cache',Authorization:'Bearer CALLER_INPUT'}});
-test('20-second server cache ignores query/cache-busting headers and refreshes at expiry',async t=>{
- const f=setup(t);let r=await spotify(req(),env);assert.equal(r.status,200);assert.equal(r.headers.get('cache-control'),'public, max-age=20');assert.equal((await r.json()).profileUrl,env.SPOTIFY_PROFILE_URL);
+test('5-second server cache ignores query/cache-busting headers and refreshes at expiry',async t=>{
+ const f=setup(t);let r=await spotify(req(),env);assert.equal(r.status,200);assert.equal(r.headers.get('cache-control'),'public, max-age=5');assert.equal((await r.json()).profileUrl,env.SPOTIFY_PROFILE_URL);
  for(let i=0;i<100;i++)assert.equal((await spotify(req('?nonce='+i),env)).status,200);
  assert.equal(f.calls(),2,'one token request and one playback request for 101 visitors');
- f.advance(19999);await spotify(req(),env);assert.equal(f.calls(),2);
+ f.advance(4999);await spotify(req(),env);assert.equal(f.calls(),2);
  f.advance(1);await spotify(req(),env);assert.equal(f.calls(),4);
 });
 test('failure cooldown avoids retry storms and never returns upstream errors or credentials',async t=>{
@@ -118,4 +118,20 @@ test('built Worker routes Spotify through the server cache', async t => {
     assert.equal((await response.json()).title, 'Test song');
   }
   assert.equal(f.calls(), 2);
+});
+
+test('provider Retry-After extends the failure cooldown', async t => {
+  const f = setup(t);
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls++;
+    return new Response('DO_NOT_LEAK_PROVIDER_BODY', {status: 429, headers: {'Retry-After': '60'}});
+  };
+  assert.equal((await spotify(req(), env)).status, 503);
+  f.advance(59999);
+  assert.equal((await spotify(req(), env)).status, 503);
+  assert.equal(calls, 1);
+  f.advance(1);
+  await spotify(req(), env);
+  assert.equal(calls, 2);
 });

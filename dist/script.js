@@ -142,7 +142,7 @@ if (spotifyCard) {
   const progress = spotifyCard.querySelector('[data-spotify-progress]');
   const progressBar = progress.querySelector('span');
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-  let hasTrack = false;
+  let refreshingSpotify = false;
 
   const updateProgress = track => {
     progressBar.style.transition = 'none';
@@ -161,13 +161,16 @@ if (spotifyCard) {
     progressBar.style.width = '100%';
   };
 
-  const refreshSpotify = () => fetch('/api/spotify', {
+  const refreshSpotify = () => {
+    if (document.hidden || refreshingSpotify) return;
+    refreshingSpotify = true;
+    return fetch('/api/spotify', {
+    signal: AbortSignal.timeout(10000),
     cache: 'no-store',
     headers: {'Accept': 'application/json'}
   })
     .then(response => response.ok ? response.json() : Promise.reject(new Error('Spotify unavailable')))
     .then(track => {
-      hasTrack = true;
       spotifyCard.dataset.playing = track.isPlaying ? 'true' : 'false';
       state.textContent = track.isPlaying ? 'Playing now' : 'No Activity';
       title.hidden = !track.isPlaying;
@@ -196,18 +199,20 @@ if (spotifyCard) {
       updateProgress(track);
     })
     .catch(() => {
-      if (hasTrack) return;
       spotifyCard.dataset.playing = 'false';
-      state.textContent = 'Spotify activity';
-      title.textContent = 'Nothing playing right now';
-      artist.textContent = 'Check back later to see what I’m listening to.';
+      state.textContent = 'Spotify temporarily unavailable';
+      title.hidden = true;
+      artist.hidden = true;
+      art.hidden = true;
+      progress.hidden = true;
       link.hidden = true;
-    });
+    }).finally(() => { refreshingSpotify = false; });
+  };
 
   refreshSpotify();
   window.setInterval(() => {
     if (!document.hidden) refreshSpotify();
-  }, 10000);
+  }, 5000);
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) refreshSpotify();
   });
