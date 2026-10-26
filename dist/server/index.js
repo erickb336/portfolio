@@ -2169,7 +2169,7 @@ async function handleStrava(request, env, ctx) {
   }
 }
 
-// server/index.js
+// server/spotify.js
 var SPOTIFY_ACCOUNTS = "https://accounts.spotify.com";
 var SPOTIFY_API = "https://api.spotify.com/v1";
 function json(data, init = {}) {
@@ -2183,7 +2183,8 @@ async function spotifyToken(env, body) {
   return fetch(`${SPOTIFY_ACCOUNTS}/api/token`, {
     method: "POST",
     headers: { "authorization": `Basic ${auth}`, "content-type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams(body)
+    body: new URLSearchParams(body),
+    signal: AbortSignal.timeout(5e3)
   });
 }
 function sanitizeTrack(payload, isPlaying, playedAt = null) {
@@ -2207,20 +2208,69 @@ async function nowPlaying(env) {
   const tokenResponse = await spotifyToken(env, { grant_type: "refresh_token", refresh_token: env.SPOTIFY_REFRESH_TOKEN });
   if (!tokenResponse.ok) return json({ error: "token_refresh_failed" }, { status: 503 });
   const { access_token: accessToken } = await tokenResponse.json();
+  if (typeof accessToken !== "string" || !accessToken) return json({ error: "token_refresh_failed" }, { status: 503 });
   const headers2 = { "authorization": `Bearer ${accessToken}` };
-  const current = await fetch(`${SPOTIFY_API}/me/player/currently-playing`, { headers: headers2 });
-  if (current.ok && current.status !== 204) {
+  const current = await fetch(`${SPOTIFY_API}/me/player/currently-playing`, { headers: headers2, signal: AbortSignal.timeout(5e3) });
+  if (!current.ok) return json({ error: "playback_unavailable" }, { status: 503 });
+  if (current.status !== 204) {
     const payload2 = await current.json();
     const track2 = sanitizeTrack(payload2, Boolean(payload2.is_playing));
     if (track2) return json(track2);
   }
-  const recent = await fetch(`${SPOTIFY_API}/me/player/recently-played?limit=1`, { headers: headers2 });
+  const recent = await fetch(`${SPOTIFY_API}/me/player/recently-played?limit=1`, { headers: headers2, signal: AbortSignal.timeout(5e3) });
   if (!recent.ok) return json({ error: "playback_unavailable" }, { status: 503 });
   const payload = await recent.json();
   const latest = payload.items?.[0];
   const track = sanitizeTrack(latest, false, latest?.played_at || null);
   return track ? json(track) : json({ error: "no_tracks" }, { status: 404 });
 }
+async function spotify(request, env) {
+  if (request.method !== "GET") {
+    return new Response(null, { status: 405, headers: { Allow: "GET", "Cache-Control": "no-store" } });
+  }
+  const key2 = new Request("https://erickbenitez.com/api/spotify");
+  let cache;
+  try {
+    cache = await caches.open("portfolio-spotify-v1");
+    const hit = await cache.match(key2);
+    if (hit) {
+      const saved = await hit.json();
+      return publicResponse(saved.body, saved.status, saved.ttl);
+    }
+  } catch {
+    return unavailable();
+  }
+  let body, status;
+  try {
+    const response = await nowPlaying(env);
+    status = response.status;
+    body = await response.json();
+    if (response.ok && env.SPOTIFY_PROFILE_URL) body.profileUrl = env.SPOTIFY_PROFILE_URL;
+  } catch {
+    status = 503;
+    body = { error: "temporarily_unavailable" };
+  }
+  const ttl = status === 200 || status === 404 ? 20 : 5;
+  try {
+    await cache.put(key2, Response.json({ body, status, ttl }, {
+      headers: { "Cache-Control": `public, max-age=${ttl}` }
+    }));
+  } catch {
+    return unavailable();
+  }
+  return publicResponse(body, status, ttl);
+}
+function publicResponse(body, status, ttl) {
+  return Response.json(body, { status, headers: {
+    "Cache-Control": status === 200 ? `public, max-age=${ttl}` : "no-store",
+    "X-Content-Type-Options": "nosniff"
+  } });
+}
+function unavailable() {
+  return publicResponse({ error: "temporarily_unavailable" }, 503, 0);
+}
+
+// server/index.js
 var index_default = {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -2230,17 +2280,11 @@ var index_default = {
       if (url.pathname === "/api/github/contributions") return githubContributions(request, ctx);
       const strava = await handleStrava(request, env, ctx);
       if (strava) return strava;
-      if (url.pathname === "/api/spotify") {
-        const response = await nowPlaying(env);
-        if (!response.ok || !env.SPOTIFY_PROFILE_URL) return response;
-        const payload = await response.json();
-        payload.profileUrl = env.SPOTIFY_PROFILE_URL;
-        return json(payload);
-      }
+      if (url.pathname === "/api/spotify") return await spotify(request, env);
       return env.ASSETS.fetch(request);
     } catch (error) {
-      console.error("Spotify integration error", error);
-      if (url.pathname.startsWith("/api/")) return json({ error: "temporarily_unavailable" }, { status: 503 });
+      console.error(JSON.stringify({ event: "api_unavailable" }));
+      if (url.pathname.startsWith("/api/")) return Response.json({ error: "temporarily_unavailable" }, { status: 503, headers: { "Cache-Control": "no-store" } });
       return new Response("Temporarily unavailable", { status: 503 });
     }
   }
