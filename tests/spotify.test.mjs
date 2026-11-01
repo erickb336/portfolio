@@ -135,3 +135,12 @@ test('provider Retry-After extends the failure cooldown', async t => {
   await spotify(req(), env);
   assert.equal(calls, 2);
 });
+
+test('provider quota and full Retry-After survive without leaking response details',async t=>{
+ const f=setup(t);let calls=0;
+ globalThis.fetch=async()=>{calls++;return Response.json({error:{reason:'QUOTA_EXCEEDED',message:'DO_NOT_LEAK'}},{status:429,headers:{'Retry-After':'86400'}});};
+ const response=await spotify(req(),env);
+ assert.deepEqual(await response.json(),{error:'quota_exceeded'});
+ assert.equal(response.headers.get('Retry-After'),'86400');
+ f.advance(3600001);await spotify(req(),env);assert.equal(calls,1,'do not retry after just an hour');
+});

@@ -2205,11 +2205,20 @@ function sanitizeTrack(payload, isPlaying, playedAt = null) {
     profileUrl: null
   };
 }
-function providerFailure(response, error) {
+async function providerFailure(response, error, stage = error) {
   const raw = response.headers.get("retry-after");
   const seconds = raw && /^\d+$/.test(raw) ? Number(raw) : 0;
-  const retryAfter = Math.min(3600, Math.max(5, seconds));
-  const reason = response.status === 429 ? "rate_limited" : [401, 403].includes(response.status) ? "access_denied" : error;
+  const retryAfter = Number.isSafeInteger(seconds) ? Math.max(5, seconds) : 5;
+  let quotaExceeded = false;
+  if (response.status === 429) {
+    try {
+      const payload = await response.json();
+      quotaExceeded = payload?.error?.reason === "QUOTA_EXCEEDED" || payload?.reason === "QUOTA_EXCEEDED";
+    } catch {
+    }
+  }
+  console.warn(JSON.stringify({ event: "spotify_provider_failure", stage, status: response.status, retryAfter, quotaExceeded }));
+  const reason = quotaExceeded ? "quota_exceeded" : response.status === 429 ? "rate_limited" : [401, 403].includes(response.status) ? "access_denied" : error;
   return json({ error: reason }, { status: 503, headers: { "Retry-After": String(retryAfter) } });
 }
 async function nowPlaying(env) {
@@ -2220,14 +2229,14 @@ async function nowPlaying(env) {
   if (typeof accessToken !== "string" || !accessToken) return json({ error: "token_refresh_failed" }, { status: 503 });
   const headers2 = { "authorization": `Bearer ${accessToken}` };
   const current = await fetch(`${SPOTIFY_API}/me/player/currently-playing`, { headers: headers2, signal: AbortSignal.timeout(5e3) });
-  if (!current.ok) return providerFailure(current, "playback_unavailable");
+  if (!current.ok) return providerFailure(current, "playback_unavailable", "currently_playing");
   if (current.status !== 204) {
     const payload2 = await current.json();
     const track2 = sanitizeTrack(payload2, Boolean(payload2.is_playing));
     if (track2) return json(track2);
   }
   const recent = await fetch(`${SPOTIFY_API}/me/player/recently-played?limit=1`, { headers: headers2, signal: AbortSignal.timeout(5e3) });
-  if (!recent.ok) return providerFailure(recent, "playback_unavailable");
+  if (!recent.ok) return providerFailure(recent, "playback_unavailable", "recently_played");
   const payload = await recent.json();
   const latest = payload.items?.[0];
   const track = sanitizeTrack(latest, false, latest?.played_at || null);
@@ -2240,7 +2249,7 @@ async function spotify(request, env) {
   const key2 = new Request("https://erickbenitez.com/api/spotify");
   let cache;
   try {
-    cache = await caches.open("portfolio-spotify-v1");
+    cache = await caches.open("portfolio-spotify-v2");
     const hit = await cache.match(key2);
     if (hit) {
       const saved = await hit.json();
