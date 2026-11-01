@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
 
 test('renders new API activities without embed codes, refreshes edits, and clears unavailable data', async () => {
-  const element = tag => ({tag, setAttribute(name,value){this[name]=value;}, dataset:{}, children:[], append(...items){this.children.push(...items);}, replaceChildren(...items){this.children=items;}});
+  const element = tag => ({tag, addEventListener(){}, setAttribute(name,value){this[name]=value;}, dataset:{}, children:[], append(...items){this.children.push(...items);}, replaceChildren(...items){this.children=items;}});
   const list=element(), status=element(), profile=element(), section=element(), body=element();
   section.querySelector=selector=>({'[data-activity-list]':list,'[data-activity-status]':status,'[data-strava-profile]':profile})[selector];
   let data={connected:true,activities:[{id:'20401166942',name:'Evening Weight Training',sport:'WeightTraining',startDate:'2026-10-01T01:16:00Z',timezone:'America/Los_Angeles',elapsedTime:2049,movingTime:2049,distance:0,elevation:0}],profileUrl:'https://www.strava.com/athletes/123'};
@@ -23,7 +23,7 @@ test('renders new API activities without embed codes, refreshes edits, and clear
   assert.equal(card.children[3].children[0].children[1].textContent,'34m 9s');
   assert.equal(card.children.at(-1).href,'https://www.strava.com/activities/20401166942');
   assert.deepEqual(calls,['/api/strava']);
-  assert.equal(body.children.length,0);
+  assert.equal(body.children[0].tag,'dialog');
   data.activities[0].name='<script>not executable</script>';
   poll();await flush();
   assert.equal(list.children[0].children[1].textContent,'<script>not executable</script>');
@@ -52,7 +52,7 @@ test('run and walk carousels toggle map/photo and wrap without replacing the med
   let resized=0;
   const map={remove(){},fitBounds(){},invalidateSize(){resized++;}};
   runInNewContext(readFileSync('dist/strava-feed.js','utf8'),{
-   document:{querySelector:()=>section,createElement:element,addEventListener(){}},
+   document:{querySelector:()=>section,createElement:element,body:element(),addEventListener(){}},
    fetch:async()=>({ok:true,json:async()=>({connected:true,activities:[{id:'1',name:'Outdoor activity',sport,movingTime:60,distance:100,route:'_p~iF~ps|U_ulLnnqC_mqNvxq`@',photo:'https://dgtzuqphqg23d.cloudfront.net/photo.jpg'}]})}),
    L:{map:()=>map,tileLayer:()=>({addTo(){}}),polyline:()=>({addTo(){return {getBounds(){return [];}};}})},
    URL,AbortSignal,Intl,setInterval(){}
@@ -70,11 +70,11 @@ test('run and walk carousels toggle map/photo and wrap without replacing the med
 });
 
 test('activity descriptions render as plain text and rides show average speed',async()=>{
- const element=tag=>({tag,dataset:{},children:[],setAttribute(k,v){this[k]=v;},append(...x){this.children.push(...x);},replaceChildren(...x){this.children=x;}});
+ const element=tag=>({tag,addEventListener(){},dataset:{},children:[],setAttribute(k,v){this[k]=v;},append(...x){this.children.push(...x);},replaceChildren(...x){this.children=x;}});
  const list=element(),status=element(),profile=element(),section=element();
  section.querySelector=s=>({'[data-activity-list]':list,'[data-activity-status]':status,'[data-strava-profile]':profile})[s];
  runInNewContext(readFileSync('dist/strava-feed.js','utf8'),{
- document:{querySelector:()=>section,createElement:element,addEventListener(){}},
+ document:{querySelector:()=>section,createElement:element,body:element(),addEventListener(){}},
  fetch:async()=>({ok:true,json:async()=>({connected:true,activities:[{id:'1',name:'Ride',sport:'Ride',description:'Hello\n<img src=x onerror=alert(1)>',averageSpeed:5,movingTime:60}]})}),URL,AbortSignal,Intl,setInterval(){}
  });
  await new Promise(resolve=>setImmediate(resolve));

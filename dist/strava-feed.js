@@ -37,6 +37,32 @@ if (section) {
     if (className) element.className = className;
     return element;
   };
+  const viewer = node('dialog', undefined, 'strava-photo-viewer');
+  viewer.setAttribute('aria-label', 'Full activity photo');
+  const closePhoto = node('button', 'Close ×', 'strava-photo-close');
+  closePhoto.type = 'button';
+  closePhoto.setAttribute('aria-label', 'Close full photo');
+  const fullPhoto = node('img');
+  fullPhoto.referrerPolicy = 'no-referrer';
+  viewer.append(closePhoto, fullPhoto);
+  document.body.append(viewer);
+  let photoTrigger;
+  let previousOverflow;
+  closePhoto.addEventListener('click', () => viewer.close());
+  viewer.addEventListener('click', event => { if (event.target === viewer) viewer.close(); });
+  viewer.addEventListener('close', () => {
+    document.body.style.overflow = previousOverflow;
+    fullPhoto.removeAttribute('src');
+    if (photoTrigger?.isConnected) photoTrigger.focus();
+  });
+  function openPhoto(img, trigger) {
+    photoTrigger = trigger;
+    fullPhoto.src = img.src;
+    fullPhoto.alt = img.alt;
+    previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    viewer.showModal();
+  }
   const duration = seconds => {
     const minutes = Math.floor(seconds / 60);
     return minutes >= 60 ? `${Math.floor(minutes / 60)}h ${minutes % 60}m` : `${minutes}m ${Math.floor(seconds % 60)}s`;
@@ -113,9 +139,14 @@ if (section) {
       const img = node('img', undefined, 'strava-photo');
       img.src = photo; img.alt = activity.name + ' — photo ' + (photoIndex + 1);
       img.loading = 'lazy'; img.referrerPolicy = 'no-referrer';
-      img.onerror = () => { img.remove(); const index = slides.findIndex(slide => slide.element === img); if (index >= 0) slides.splice(index, 1); showSlide(0); if (!slides.length) { media.className = 'strava-media strava-media-empty'; article.className += ' strava-card-no-media'; } };
-      media.append(img);
-      slides.push({element:img, label:'Photo ' + (photoIndex + 1)});
+      const expand = node('button', undefined, 'strava-photo-expand');
+      expand.type = 'button';
+      expand.setAttribute('aria-label', 'Expand ' + img.alt);
+      expand.addEventListener('click', () => openPhoto(img, expand));
+      expand.append(img, node('span', '⤢', 'strava-photo-hint'));
+      img.onerror = () => { expand.remove(); const index = slides.findIndex(slide => slide.element === expand); if (index >= 0) slides.splice(index, 1); showSlide(0); if (!slides.length) { media.className = 'strava-media strava-media-empty'; article.className += ' strava-card-no-media'; } };
+      media.append(expand);
+      slides.push({element:expand, label:'Photo ' + (photoIndex + 1)});
     }
     if (!media.children.length) { media.className += ' strava-media-empty'; article.className += ' strava-card-no-media'; }
     if (slides.length > 1) {
