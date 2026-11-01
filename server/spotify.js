@@ -79,7 +79,8 @@ export async function spotify(request, env) {
     const hit = await cache.match(key);
     if (hit) {
       const saved = await hit.json();
-      return publicResponse(saved.body, saved.status, saved.ttl);
+      const remaining = saved.expiresAt ? Math.max(1, Math.ceil((saved.expiresAt - Date.now()) / 1000)) : saved.ttl;
+      return publicResponse(saved.body, saved.status, remaining);
     }
   } catch {
     // A cache outage must not turn every visitor into another upstream request.
@@ -102,7 +103,7 @@ export async function spotify(request, env) {
   // Store a 200 envelope so failures can also have a server-side cooldown.
   // Await the write before replying; no tokens or upstream errors enter it.
   try {
-    await cache.put(key, Response.json({body, status, ttl}, {
+    await cache.put(key, Response.json({body, status, ttl, expiresAt: Date.now() + ttl * 1000}, {
       headers: {'Cache-Control': `public, max-age=${ttl}`}
     }));
   } catch {

@@ -2244,7 +2244,8 @@ async function spotify(request, env) {
     const hit = await cache.match(key2);
     if (hit) {
       const saved = await hit.json();
-      return publicResponse(saved.body, saved.status, saved.ttl);
+      const remaining = saved.expiresAt ? Math.max(1, Math.ceil((saved.expiresAt - Date.now()) / 1e3)) : saved.ttl;
+      return publicResponse(saved.body, saved.status, remaining);
     }
   } catch {
     return unavailable();
@@ -2263,7 +2264,7 @@ async function spotify(request, env) {
   }
   const ttl = status === 200 || status === 404 ? 5 : retryAfter;
   try {
-    await cache.put(key2, Response.json({ body, status, ttl }, {
+    await cache.put(key2, Response.json({ body, status, ttl, expiresAt: Date.now() + ttl * 1e3 }, {
       headers: { "Cache-Control": `public, max-age=${ttl}` }
     }));
   } catch {

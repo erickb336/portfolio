@@ -142,6 +142,7 @@ if (spotifyCard) {
   const progressBar = progress.querySelector('span');
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let refreshingSpotify = false;
+  let spotifyRetryAt = 0;
 
   const updateProgress = track => {
     progressBar.style.transition = 'none';
@@ -161,14 +162,19 @@ if (spotifyCard) {
   };
 
   const refreshSpotify = () => {
-    if (document.hidden || refreshingSpotify) return;
+    if (document.hidden || refreshingSpotify || Date.now() < spotifyRetryAt) return;
     refreshingSpotify = true;
     return fetch('/api/spotify', {
     signal: AbortSignal.timeout(10000),
     cache: 'no-store',
     headers: {'Accept': 'application/json'}
   })
-    .then(response => response.ok ? response.json() : Promise.reject(new Error('Spotify unavailable')))
+    .then(response => {
+      if (response.ok) { spotifyRetryAt = 0; return response.json(); }
+      const retry = Number(response.headers?.get('Retry-After'));
+      if (Number.isFinite(retry) && retry > 0) spotifyRetryAt = Date.now() + retry * 1000;
+      throw new Error('Spotify unavailable');
+    })
     .then(track => {
       spotifyCard.dataset.playing = track.isPlaying ? 'true' : 'false';
       state.textContent = track.isPlaying ? 'Playing now' : 'No Activity';

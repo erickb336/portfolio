@@ -11,14 +11,14 @@ function mount(hidden = false) {
     return nodes.get(key);
   }
   const card = node('card');
-  let poll, visibility, answer, calls = 0;
+  let poll, visibility, answer, calls = 0, time = 0;
   const document = {hidden, querySelector: () => card, createElement: node, addEventListener(_, fn) { visibility = fn; }};
   vm.runInNewContext(script.slice(script.indexOf('const spotifyCard =')), {
-    document, AbortSignal,
+    document, AbortSignal, Date: {now: () => time},
     window: {matchMedia: () => ({matches: true}), setInterval(fn, ms) { assert.equal(ms, 5000); poll = fn; }},
     fetch: () => { calls++; return new Promise(resolve => { answer = resolve; }); }
   });
-  return {document, nodes, card, poll: () => poll(), visible: () => visibility(), calls: () => calls,
+  return {document, nodes, card, advance: ms => time += ms, poll: () => poll(), visible: () => visibility(), calls: () => calls,
     answer: response => answer(response)};
 }
 test('Spotify polls every five seconds, pauses hidden, resumes and prevents overlaps', async () => {
@@ -43,4 +43,10 @@ test('Spotify polls every five seconds, pauses hidden, resumes and prevents over
 test('initially hidden page does not request Spotify', () => {
   const ui = mount(true); assert.equal(ui.calls(), 0);
   ui.document.hidden = false; ui.visible(); assert.equal(ui.calls(), 1);
+});
+test('Spotify respects Retry-After across polling and visibility, then retries', async()=>{
+ const ui=mount();ui.answer({ok:false,headers:{get:()=> '60'}});await settle();
+ ui.poll();ui.visible();assert.equal(ui.calls(),1);
+ ui.advance(59999);ui.poll();assert.equal(ui.calls(),1);
+ ui.advance(1);ui.poll();assert.equal(ui.calls(),2);
 });
