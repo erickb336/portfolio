@@ -27,9 +27,8 @@ if (deck) {
   });
 }
 
-const bookTrack = document.querySelector('.book-track');
-if (bookTrack) {
-  const controls = document.querySelector('.book-shelf-controls');
+document.querySelectorAll('.book-shelf-controls').forEach(controls => {
+  const bookTrack = controls.closest('.reading-shelf').querySelector('.book-track');
   const previous = controls.querySelector('[data-books-prev]');
   const next = controls.querySelector('[data-books-next]');
   controls.hidden = false;
@@ -55,7 +54,7 @@ if (bookTrack) {
     if (img.complete && !img.naturalWidth) fallback();
   });
   updateBookControls();
-}
+});
 
 document.querySelectorAll('.photo-deck').forEach(photoDeck => {
   const cards = [...photoDeck.querySelectorAll('.photo-card')];
