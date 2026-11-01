@@ -68,3 +68,16 @@ test('run and walk carousels toggle map/photo and wrap without replacing the med
   assert.equal(resized,1);
  }
 });
+
+test('activity descriptions render as plain text and rides show average speed',async()=>{
+ const element=tag=>({tag,dataset:{},children:[],setAttribute(k,v){this[k]=v;},append(...x){this.children.push(...x);},replaceChildren(...x){this.children=x;}});
+ const list=element(),status=element(),profile=element(),section=element();
+ section.querySelector=s=>({'[data-activity-list]':list,'[data-activity-status]':status,'[data-strava-profile]':profile})[s];
+ runInNewContext(readFileSync('dist/strava-feed.js','utf8'),{
+ document:{querySelector:()=>section,createElement:element,addEventListener(){}},
+ fetch:async()=>({ok:true,json:async()=>({connected:true,activities:[{id:'1',name:'Ride',sport:'Ride',description:'Hello\n<img src=x onerror=alert(1)>',averageSpeed:5,movingTime:60}]})}),URL,AbortSignal,Intl,setInterval(){}
+ });
+ await new Promise(resolve=>setImmediate(resolve));
+ const card=list.children[0];assert.equal(card.children.find(x=>x.className==='strava-description').textContent,'Hello\n<img src=x onerror=alert(1)>');
+ const stats=card.children.find(x=>x.className==='strava-stats');assert.equal(stats.children.at(-1).children[1].textContent,'11.2 mph');
+});

@@ -29,8 +29,8 @@ test('unconfigured endpoint hides feed',async()=>{
 });
 test('refresh rotates token before listing, cache prevents repeat calls, only allowlisted fields are exposed',async()=>{
  const env=await fixture();const original=globalThis.fetch;const calls=[];
- globalThis.fetch=async(url,options)=>{calls.push(String(url));if(String(url).endsWith('/oauth/token'))return Response.json({access_token:'new-access',refresh_token:'new-refresh',expires_at:stamp()+21600});assert.equal(options.headers.authorization,'Bearer new-access');return Response.json([activity(1),activity(2,'Walk'),activity(3,'WeightTraining')]);};
- try{for(let i=0;i<2;i++){const result=await(await handleStrava(request('/api/strava'),env,{})).json();assert.deepEqual(result.activities.map(a=>a.id),['3','2','1']);assert.equal(JSON.stringify(result).includes('token'),false);}assert.equal(calls.length,2);const row=await env.DB.prepare('SELECT * FROM strava_state').first();assert.equal((await unseal(env,row.encrypted)).refreshToken,'new-refresh');}finally{globalThis.fetch=original;}
+ globalThis.fetch=async(url,options)=>{calls.push(String(url));if(String(url).endsWith('/oauth/token'))return Response.json({access_token:'new-access',refresh_token:'new-refresh',expires_at:stamp()+21600});assert.equal(options.headers.authorization,'Bearer new-access');if(String(url).includes('/athlete/activities'))return Response.json([activity(1),activity(2,'Walk'),activity(3,'WeightTraining')]);return Response.json(activity(Number(String(url).split('/').pop())));};
+ try{for(let i=0;i<2;i++){const result=await(await handleStrava(request('/api/strava'),env,{})).json();assert.deepEqual(result.activities.map(a=>a.id),['3','2','1']);assert.equal(JSON.stringify(result).includes('token'),false);}assert.equal(calls.length,5);const row=await env.DB.prepare('SELECT * FROM strava_state').first();assert.equal((await unseal(env,row.encrypted)).refreshToken,'new-refresh');}finally{globalThis.fetch=original;}
 });
 test('setup requires owner key and same origin; callback requires matching cookie',async()=>{
  const env=await fixture();const res=await handleStrava(new Request('https://erickbenitez.com/strava/connect',{method:'POST',headers:{origin:'https://evil.example'},body:'{}'}),env,{});assert.equal(res.status,403);
@@ -87,7 +87,7 @@ test('loads all album photos after checking ownership and visibility, with safe 
   const result=await(await handleStrava(request('/api/strava'),env,{})).json();
   assert.deepEqual(result.activities.find(a=>a.id==='1').photos,[one,two]);
   assert.deepEqual(result.activities.find(a=>a.id==='2').photos,[one]);
-  assert.equal(result.activities[0].mediaVersion,4);
+  assert.equal(result.activities[0].mediaVersion,5);
   assert.equal(calls.filter(u=>u.includes('/photos?')).length,2);
  }finally{globalThis.fetch=original;}
 });
@@ -95,7 +95,7 @@ test('loads all album photos after checking ownership and visibility, with safe 
 test('feed retains refresh in worker context until upstream completes',async()=>{
  const env=await fixture();const original=globalThis.fetch;let release;
  const gate=new Promise(resolve=>{release=resolve;});const retained=[];
- globalThis.fetch=async(url)=>{await gate;return String(url).endsWith('/oauth/token')?Response.json({access_token:'access',refresh_token:'rotated',expires_at:stamp()+21600}):Response.json([activity(1)]);};
+ globalThis.fetch=async(url)=>{await gate;return String(url).endsWith('/oauth/token')?Response.json({access_token:'access',refresh_token:'rotated',expires_at:stamp()+21600}):Response.json(String(url).includes('/athlete/activities')?[activity(1)]:activity(1));};
  try {
   const response=handleStrava(request('/api/strava'),env,{waitUntil(p){retained.push(p);}});
   await new Promise(resolve=>setImmediate(resolve));
@@ -113,4 +113,16 @@ test('all public sport types are supported without allowing private activities',
   assert.equal(publicActivities([activity(1,sport,'followers_only')],123).length,0);
  }
  assert.equal(publicActivities([activity(1,'<script>')],123).length,0);
+});
+
+test('descriptions load for activities without photos and remain bounded public text',async()=>{
+ const env=await fixture(), original=globalThis.fetch;const calls=[];
+ globalThis.fetch=async url=>{calls.push(String(url));
+  if(String(url).endsWith('/oauth/token'))return Response.json({access_token:'access',refresh_token:'refresh',expires_at:stamp()+21600});
+  if(String(url).includes('/athlete/activities'))return Response.json([activity(1,'Ride')]);
+  return Response.json({...activity(1,'Ride'),description:'Great ride!\n<script>plain text</script>',average_speed:5,private_note:'SECRET'});
+ };
+ try{const result=await(await handleStrava(request('/api/strava'),env,{})).json();assert.equal(result.activities[0].description,'Great ride!\n<script>plain text</script>');assert.equal(result.activities[0].averageSpeed,5);assert.ok(!JSON.stringify(result).includes('SECRET'));assert.equal(calls.length,3);}
+ finally{globalThis.fetch=original;}
+ assert.equal(publicActivities([{...activity(1),description:'x'.repeat(6000)}],'123')[0].description.length,5000);
 });

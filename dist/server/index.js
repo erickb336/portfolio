@@ -1952,6 +1952,8 @@ function publicActivities(activities, athleteId) {
   ).sort((a, b) => Date.parse(b.start_date) - Date.parse(a.start_date)).slice(0, 6).map((activity) => ({
     id: String(activity.id),
     name: typeof activity.name === "string" ? activity.name.slice(0, 200) : "Activity",
+    description: typeof activity.description === "string" ? activity.description.trim().slice(0, 5e3) : "",
+    averageSpeed: metric(activity.average_speed),
     sport: activity.sport_type || activity.type,
     startDate: Number.isFinite(Date.parse(activity.start_date)) ? activity.start_date : null,
     timezone: typeof activity.timezone === "string" ? activity.timezone.replace(/^\(GMT[^)]+\)\s*/, "") : "UTC",
@@ -1961,7 +1963,7 @@ function publicActivities(activities, athleteId) {
     elevation: metric(activity.total_elevation_gain),
     photo: publicPhoto(activity.photos?.primary?.urls),
     photos: [publicPhoto(activity.photos?.primary?.urls)].filter(Boolean),
-    mediaVersion: 4,
+    mediaVersion: 5,
     route: typeof activity.map?.summary_polyline === "string" && activity.map.summary_polyline.length <= 2e4 ? activity.map.summary_polyline : null
   }));
 }
@@ -1993,7 +1995,6 @@ async function sync(env, force = false) {
     const feed2 = publicActivities(activities, auth.athleteId);
     await Promise.all(feed2.map(async (item, index) => {
       const summary = activities.find((activity) => String(activity.id) === item.id);
-      if (!summary?.total_photo_count) return;
       try {
         const detailResponse = await fetch(`${API}/activities/${item.id}`, {
           headers: { authorization: `Bearer ${accessToken}` },
@@ -2008,6 +2009,7 @@ async function sync(env, force = false) {
         const safe = publicActivities([detail], auth.athleteId)[0];
         feed2[index] = safe?.id === item.id ? { ...safe, route: item.route } : null;
         if (!feed2[index]) return;
+        if (!summary?.total_photo_count) return;
         const photosResponse = await fetch(`${API}/activities/${item.id}/photos?size=1200&photo_sources=1`, {
           headers: { authorization: `Bearer ${accessToken}` },
           signal: AbortSignal.timeout(5e3)
@@ -2031,7 +2033,7 @@ async function sync(env, force = false) {
 async function feed(env, ctx) {
   if (!env.DB || !env.STRAVA_ENCRYPTION_KEY) return reply2({ connected: false, activities: [] });
   const before = await stateRow(env);
-  const oldFormat = before && JSON.parse(before.feed).some((item) => item.mediaVersion !== 4);
+  const oldFormat = before && JSON.parse(before.feed).some((item) => item.mediaVersion !== 5);
   const refresh = sync(env, Boolean(oldFormat));
   ctx?.waitUntil?.(refresh);
   await refresh;
@@ -2207,7 +2209,8 @@ function providerFailure(response, error) {
   const raw = response.headers.get("retry-after");
   const seconds = raw && /^\d+$/.test(raw) ? Number(raw) : 0;
   const retryAfter = Math.min(3600, Math.max(5, seconds));
-  return json({ error }, { status: 503, headers: { "Retry-After": String(retryAfter) } });
+  const reason = response.status === 429 ? "rate_limited" : [401, 403].includes(response.status) ? "access_denied" : error;
+  return json({ error: reason }, { status: 503, headers: { "Retry-After": String(retryAfter) } });
 }
 async function nowPlaying(env) {
   if (!env.SPOTIFY_REFRESH_TOKEN) return json({ error: "not_connected" }, { status: 503 });
@@ -2271,6 +2274,7 @@ async function spotify(request, env) {
 function publicResponse(body, status, ttl) {
   return Response.json(body, { status, headers: {
     "Cache-Control": status === 200 ? `public, max-age=${ttl}` : "no-store",
+    ...status === 503 && ttl > 0 ? { "Retry-After": String(ttl) } : {},
     "X-Content-Type-Options": "nosniff"
   } });
 }

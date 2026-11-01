@@ -61,7 +61,17 @@ if (section) {
     if (activity.sport !== 'WeightTraining' && activity.distance > 0) stat('Distance', `${(activity.distance / 1609.344).toFixed(2)} mi`);
     stat('Time', duration(activity.sport === 'WeightTraining' ? activity.elapsedTime || activity.movingTime : activity.movingTime || activity.elapsedTime));
     if (activity.sport !== 'WeightTraining' && activity.elevation > 0) stat('Elevation', `${Math.round(activity.elevation * 3.28084)} ft`);
+    if (activity.averageSpeed > 0 && /^(Run|TrailRun|VirtualRun|Walk|Hike)$/.test(activity.sport)) {
+      const seconds = Math.round(1609.344 / activity.averageSpeed);
+      stat('Pace', `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')} /mi`);
+    } else if (activity.averageSpeed > 0 && /Ride$/.test(activity.sport)) {
+      stat('Avg speed', `${(activity.averageSpeed * 2.236936).toFixed(1)} mph`);
+    }
     article.append(stats);
+    if (typeof activity.description === 'string' && activity.description.trim()) {
+      const description = node('p', activity.description.slice(0, 5000), 'strava-description');
+      article.append(description);
+    }
     const media = node('div', undefined, 'strava-media');
     const points = activity.sport === 'WeightTraining' ? [] : decodeRoute(activity.route);
     const photos = [];

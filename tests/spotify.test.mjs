@@ -36,7 +36,7 @@ test('provider authentication failure is cached without exposing its body', asyn
   for (let i = 0; i < 10; i++) {
     const response = await spotify(req(), env);
     assert.equal(response.status, 503);
-    assert.deepEqual(await response.json(), {error: 'token_refresh_failed'});
+    assert.deepEqual(await response.json(), {error: 'access_denied'});
   }
   assert.equal(calls, 1);
   f.advance(5000);
@@ -55,7 +55,7 @@ test('playback rate limit does not trigger an extra recently-played request', as
   };
   for (let i = 0; i < 10; i++) {
     const response = await spotify(req(), env);
-    assert.deepEqual(await response.json(), {error: 'playback_unavailable'});
+    assert.deepEqual(await response.json(), {error: 'rate_limited'});
   }
   assert.equal(calls, 2);
 });

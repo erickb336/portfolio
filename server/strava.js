@@ -83,6 +83,8 @@ export function publicActivities(activities, athleteId) {
     .slice(0, 6).map(activity => ({
       id: String(activity.id),
       name: typeof activity.name === 'string' ? activity.name.slice(0, 200) : 'Activity',
+      description: typeof activity.description === 'string' ? activity.description.trim().slice(0, 5000) : '',
+      averageSpeed: metric(activity.average_speed),
       sport: activity.sport_type || activity.type,
       startDate: Number.isFinite(Date.parse(activity.start_date)) ? activity.start_date : null,
       timezone: typeof activity.timezone === 'string' ? activity.timezone.replace(/^\(GMT[^)]+\)\s*/, '') : 'UTC',
@@ -92,7 +94,7 @@ export function publicActivities(activities, athleteId) {
       elevation: metric(activity.total_elevation_gain),
       photo: publicPhoto(activity.photos?.primary?.urls),
       photos: [publicPhoto(activity.photos?.primary?.urls)].filter(Boolean),
-      mediaVersion: 4,
+      mediaVersion: 5,
       route: typeof activity.map?.summary_polyline === 'string' && activity.map.summary_polyline.length <= 20000 ? activity.map.summary_polyline : null,
     }));
 }
@@ -122,10 +124,9 @@ async function sync(env, force = false) {
     const activities = await response.json();
     if (!Array.isArray(activities)) throw new Error('Invalid activity list');
     const feed = publicActivities(activities, auth.athleteId);
-    // The summary endpoint omits photos. Fetch details only for cards with photos.
+    // The summary endpoint omits descriptions. Fetch details for all six public cards.
     await Promise.all(feed.map(async (item, index) => {
       const summary = activities.find(activity => String(activity.id) === item.id);
-      if (!summary?.total_photo_count) return;
       try {
         const detailResponse = await fetch(`${API}/activities/${item.id}`, {
           headers: {authorization: `Bearer ${accessToken}`}, signal: AbortSignal.timeout(5000)
@@ -136,6 +137,7 @@ async function sync(env, force = false) {
         const safe = publicActivities([detail], auth.athleteId)[0];
         feed[index] = safe?.id === item.id ? {...safe, route: item.route} : null;
         if (!feed[index]) return;
+        if (!summary?.total_photo_count) return;
         // A detail response only includes the primary photo. Request the album separately.
         const photosResponse = await fetch(`${API}/activities/${item.id}/photos?size=1200&photo_sources=1`, {
           headers: {authorization: `Bearer ${accessToken}`}, signal: AbortSignal.timeout(5000)
@@ -161,7 +163,7 @@ async function sync(env, force = false) {
 async function feed(env, ctx) {
   if (!env.DB || !env.STRAVA_ENCRYPTION_KEY) return reply({connected: false, activities: []});
   const before = await stateRow(env);
-  const oldFormat = before && JSON.parse(before.feed).some(item => item.mediaVersion !== 4);
+  const oldFormat = before && JSON.parse(before.feed).some(item => item.mediaVersion !== 5);
   const refresh = sync(env, Boolean(oldFormat));
   ctx?.waitUntil?.(refresh);
   await refresh;

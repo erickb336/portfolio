@@ -39,7 +39,8 @@ function providerFailure(response, error) {
   const raw = response.headers.get('retry-after');
   const seconds = raw && /^\d+$/.test(raw) ? Number(raw) : 0;
   const retryAfter = Math.min(3600, Math.max(5, seconds));
-  return json({error}, {status: 503, headers: {'Retry-After': String(retryAfter)}});
+  const reason = response.status === 429 ? 'rate_limited' : [401, 403].includes(response.status) ? 'access_denied' : error;
+  return json({error: reason}, {status: 503, headers: {'Retry-After': String(retryAfter)}});
 }
 
 async function nowPlaying(env) {
@@ -113,6 +114,7 @@ export async function spotify(request, env) {
 function publicResponse(body, status, ttl) {
   return Response.json(body, {status, headers: {
     'Cache-Control': status === 200 ? `public, max-age=${ttl}` : 'no-store',
+    ...(status === 503 && ttl > 0 ? {'Retry-After': String(ttl)} : {}),
     'X-Content-Type-Options': 'nosniff'
   }});
 }
