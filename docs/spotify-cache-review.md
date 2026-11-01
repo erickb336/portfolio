@@ -5,12 +5,10 @@ Prepared on 2026-10-25. User authorized publication with a 15-second song-change
 The Spotify handler caches sanitized owner playback for 5 seconds. Requests
 with query strings and cache-busting headers share the same cache entry.
 Failures have a five-second server cooldown. A numeric provider Retry-After
-extends it, capped at one hour. Empty history has a five-second
-cooldown. Error responses tell browsers not to cache them.
+extends it for the full provider-requested delay. Error responses tell browsers not to cache them.
 
 Each upstream request has a five-second timeout. Playback errors stop the
-lookup rather than making another request for recent tracks. No current track
-still falls back to recent history. Cache failures return 503 rather than
+lookup rather than making another request for recent tracks. No current track returns an idle state without requesting listening history. Cache failures return 503 rather than
 bypassing the cache. This trades availability during a cache outage for fewer
 upstream requests. Logs contain a fixed event name, not exception details.
 
@@ -94,3 +92,15 @@ shows unavailable rather than retaining an old Playing now claim.
 For a single visitor, five-second polling can make more upstream calls than the
 previous ten-second poll. Multiple visitors share the server cache. This is an
 abuse/load improvement, not a guaranteed reduction for every traffic pattern.
+
+## November 1 diagnosis
+
+Production returned Spotify QUOTA_EXCEEDED, with a Retry-After of 5283 seconds.
+The former one-hour cap retried too early. The receiver now preserves the full
+delay and distinguishes quota, rate, and access failures. Diagnostic logs contain
+only fixed operation names, HTTP status, numeric retry delay, and a quota boolean.
+Listening history is no longer requested because the card never displayed it.
+
+The production diagnostic identified recently_played as the failing operation.
+Current playback had returned successfully before the unused history lookup.
+The current-only cache namespace excludes those obsolete history failures.

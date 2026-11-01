@@ -60,25 +60,11 @@ test('playback rate limit does not trigger an extra recently-played request', as
   assert.equal(calls, 2);
 });
 
-test('no current playback falls back to recent history and caches the sanitized result', async t => {
-  setup(t);
-  let calls = 0;
-  globalThis.fetch = async url => {
-    calls++;
-    if (String(url).includes('/api/token')) return Response.json({access_token: 'DO_NOT_LEAK_ACCESS'});
-    if (String(url).includes('currently-playing')) return new Response(null, {status: 204});
-    return Response.json({items: [{played_at: '2026-10-25T00:00:00Z', track: {
-      name: 'Recent song', artists: [{name: 'Artist'}], privateData: 'DO_NOT_LEAK_EXTRA'
-    }}]});
-  };
-  for (let i = 0; i < 10; i++) {
-    const response = await spotify(req(), env);
-    const body = await response.json();
-    assert.equal(body.title, 'Recent song');
-    assert.equal(body.isPlaying, false);
-    assert.doesNotMatch(JSON.stringify(body), /DO_NOT_LEAK/);
-  }
-  assert.equal(calls, 3);
+test('no current playback returns idle without requesting listening history', async t => {
+  setup(t); let calls=0;
+  globalThis.fetch=async url=>{calls++;if(String(url).includes('/api/token'))return Response.json({access_token:'DO_NOT_LEAK_ACCESS'});assert.ok(String(url).includes('currently-playing'));return new Response(null,{status:204});};
+  for(let i=0;i<10;i++){const response=await spotify(req(),env);assert.equal(response.status,200);assert.deepEqual(await response.json(),{isPlaying:false,profileUrl:env.SPOTIFY_PROFILE_URL});}
+  assert.equal(calls,2);
 });
 
 test('cache read and write failures return safe errors', async t => {
@@ -91,23 +77,6 @@ test('cache read and write failures return safe errors', async t => {
   assert.equal(f.calls(), 2);
 });
 
-test('no recent tracks returns a cached 404 without browser caching', async t => {
-  setup(t);
-  let calls = 0;
-  globalThis.fetch = async url => {
-    calls++;
-    if (String(url).includes('/api/token')) return Response.json({access_token: 'DO_NOT_LEAK_ACCESS'});
-    if (String(url).includes('currently-playing')) return new Response(null, {status: 204});
-    return Response.json({items: []});
-  };
-  for (let i = 0; i < 10; i++) {
-    const response = await spotify(req(), env);
-    assert.equal(response.status, 404);
-    assert.equal(response.headers.get('cache-control'), 'no-store');
-    assert.deepEqual(await response.json(), {error: 'no_tracks'});
-  }
-  assert.equal(calls, 3);
-});
 
 test('built Worker routes Spotify through the server cache', async t => {
   const f = setup(t);

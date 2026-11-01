@@ -62,12 +62,8 @@ async function nowPlaying(env) {
     const track = sanitizeTrack(payload, Boolean(payload.is_playing));
     if (track) return json(track);
   }
-  const recent = await fetch(`${SPOTIFY_API}/me/player/recently-played?limit=1`, {headers, signal: AbortSignal.timeout(5000)});
-  if (!recent.ok) return providerFailure(recent, 'playback_unavailable', 'recently_played');
-  const payload = await recent.json();
-  const latest = payload.items?.[0];
-  const track = sanitizeTrack(latest, false, latest?.played_at || null);
-  return track ? json(track) : json({error: 'no_tracks'}, {status: 404});
+  // The card only shows current playback; history adds quota cost without visible value.
+  return json({isPlaying: false, profileUrl: null});
 }
 
 
@@ -80,7 +76,7 @@ export async function spotify(request, env) {
   const key = new Request('https://erickbenitez.com/api/spotify');
   let cache;
   try {
-    cache = await caches.open('portfolio-spotify-v2');
+    cache = await caches.open('portfolio-spotify-current-v3');
     const hit = await cache.match(key);
     if (hit) {
       const saved = await hit.json();

@@ -2231,16 +2231,11 @@ async function nowPlaying(env) {
   const current = await fetch(`${SPOTIFY_API}/me/player/currently-playing`, { headers: headers2, signal: AbortSignal.timeout(5e3) });
   if (!current.ok) return providerFailure(current, "playback_unavailable", "currently_playing");
   if (current.status !== 204) {
-    const payload2 = await current.json();
-    const track2 = sanitizeTrack(payload2, Boolean(payload2.is_playing));
-    if (track2) return json(track2);
+    const payload = await current.json();
+    const track = sanitizeTrack(payload, Boolean(payload.is_playing));
+    if (track) return json(track);
   }
-  const recent = await fetch(`${SPOTIFY_API}/me/player/recently-played?limit=1`, { headers: headers2, signal: AbortSignal.timeout(5e3) });
-  if (!recent.ok) return providerFailure(recent, "playback_unavailable", "recently_played");
-  const payload = await recent.json();
-  const latest = payload.items?.[0];
-  const track = sanitizeTrack(latest, false, latest?.played_at || null);
-  return track ? json(track) : json({ error: "no_tracks" }, { status: 404 });
+  return json({ isPlaying: false, profileUrl: null });
 }
 async function spotify(request, env) {
   if (request.method !== "GET") {
@@ -2249,7 +2244,7 @@ async function spotify(request, env) {
   const key2 = new Request("https://erickbenitez.com/api/spotify");
   let cache;
   try {
-    cache = await caches.open("portfolio-spotify-v2");
+    cache = await caches.open("portfolio-spotify-current-v3");
     const hit = await cache.match(key2);
     if (hit) {
       const saved = await hit.json();
