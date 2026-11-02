@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 
 const dist = resolve('dist');
 const client = resolve('dist/client');
-const excluded = new Set(['.openai', 'client', 'server']);
+const excluded = new Set(['.openai', 'client', 'server', 'sample']);
 
 rmSync(client, { recursive: true, force: true });
 mkdirSync(client, { recursive: true });
