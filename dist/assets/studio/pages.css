@@ -73,3 +73,12 @@
  .journal-page .page-intro{padding:28px 0 24px}
  .journal-page .photo-collection+.photo-collection{margin-top:28px;padding-top:28px}
 }
+
+/* Give Journal photographs room on desktop; retain the compact mobile gallery. */
+@media(min-width:701px){
+ .journal-page .photo-collection{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(32px,4vw,56px)}
+ .journal-page .photo-deck{width:100%;max-width:500px;margin-inline:0}
+ .journal-page .photo-prose{padding-top:24px}
+}
+
+@media(min-width:1000px){.journal-page main.wrap{max-width:1120px}}
