@@ -6,9 +6,6 @@ import { spotify } from './spotify.js';
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
-    if (url.pathname === '/journal' || url.pathname.startsWith('/journal/')) {
-      return Response.redirect(new URL('/', url).href, 302);
-    }
     try {
       const workstation = await handleWorkstation(request, env);
       if (workstation) return workstation;
