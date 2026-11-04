@@ -71,7 +71,7 @@ document.querySelectorAll('.photo-deck').forEach(photoDeck => {
     const dotTrack = photoDeck.querySelector('.deck-dots');
     dotTrack.scrollLeft = dots[current].offsetLeft - (dotTrack.clientWidth - dots[current].offsetWidth) / 2;
   }
-  photoDeck.querySelector('.deck-controls').hidden = false;
+  photoDeck.querySelector('.deck-controls').hidden = cards.length < 2;
   photoDeck.querySelector('[data-photo-prev]').addEventListener('click', () => showPhoto(current - 1));
   photoDeck.querySelector('[data-photo-next]').addEventListener('click', () => showPhoto(current + 1));
   dots.forEach((dot, i) => dot.addEventListener('click', () => showPhoto(i)));
