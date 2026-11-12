@@ -94,7 +94,7 @@ export function publicActivities(activities, athleteId) {
       elevation: metric(activity.total_elevation_gain),
       photo: publicPhoto(activity.photos?.primary?.urls),
       photos: [publicPhoto(activity.photos?.primary?.urls)].filter(Boolean),
-      mediaVersion: 5,
+      mediaVersion: 6,
       route: typeof activity.map?.summary_polyline === 'string' && activity.map.summary_polyline.length <= 20000 ? activity.map.summary_polyline : null,
     }));
 }
@@ -137,7 +137,12 @@ async function sync(env, force = false) {
         const safe = publicActivities([detail], auth.athleteId)[0];
         feed[index] = safe?.id === item.id ? {...safe, route: item.route} : null;
         if (!feed[index]) return;
-        if (!summary?.total_photo_count) return;
+        if (detail.total_photo_count === 0 || (detail.total_photo_count == null && summary?.total_photo_count === 0)) {
+          feed[index].photo = null;
+          feed[index].photos = [];
+          return;
+        }
+        if (!summary?.total_photo_count && !detail.total_photo_count && !feed[index].photo) return;
         // A detail response only includes the primary photo. Request the album separately.
         const photosResponse = await fetch(`${API}/activities/${item.id}/photos?size=1200&photo_sources=1`, {
           headers: {authorization: `Bearer ${accessToken}`}, signal: AbortSignal.timeout(5000)
@@ -146,7 +151,8 @@ async function sync(env, force = false) {
           const album = await photosResponse.json();
           if (Array.isArray(album)) {
             const photos = [...new Set(album.map(photo => publicPhoto(photo?.urls)).filter(Boolean))];
-            if (photos.length) feed[index].photos = photos;
+            feed[index].photos = photos;
+            feed[index].photo = photos[0] || null;
           }
         }
       } catch { /* Render summary without a photo during a transient failure. */ }
@@ -163,7 +169,7 @@ async function sync(env, force = false) {
 async function feed(env, ctx) {
   if (!env.DB || !env.STRAVA_ENCRYPTION_KEY) return reply({connected: false, activities: []});
   const before = await stateRow(env);
-  const oldFormat = before && JSON.parse(before.feed).some(item => item.mediaVersion !== 5);
+  const oldFormat = before && JSON.parse(before.feed).some(item => item.mediaVersion !== 6);
   const refresh = sync(env, Boolean(oldFormat));
   ctx?.waitUntil?.(refresh);
   await refresh;

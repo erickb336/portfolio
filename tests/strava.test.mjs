@@ -87,7 +87,7 @@ test('loads all album photos after checking ownership and visibility, with safe 
   const result=await(await handleStrava(request('/api/strava'),env,{})).json();
   assert.deepEqual(result.activities.find(a=>a.id==='1').photos,[one,two]);
   assert.deepEqual(result.activities.find(a=>a.id==='2').photos,[one]);
-  assert.equal(result.activities[0].mediaVersion,5);
+  assert.equal(result.activities[0].mediaVersion,6);
   assert.equal(calls.filter(u=>u.includes('/photos?')).length,2);
  }finally{globalThis.fetch=original;}
 });
@@ -125,4 +125,22 @@ test('descriptions load for activities without photos and remain bounded public 
  try{const result=await(await handleStrava(request('/api/strava'),env,{})).json();assert.equal(result.activities[0].description,'Great ride!\n<script>plain text</script>');assert.equal(result.activities[0].averageSpeed,5);assert.ok(!JSON.stringify(result).includes('SECRET'));assert.equal(calls.length,3);}
  finally{globalThis.fetch=original;}
  assert.equal(publicActivities([{...activity(1),description:'x'.repeat(6000)}],'123')[0].description.length,5000);
+});
+
+ test('photo deletion clears a stale primary for empty albums and zero photo counts',async()=>{
+ const env=await fixture(), original=globalThis.fetch;
+ const stale='https://dgtzuqphqg23d.cloudfront.net/deleted.jpg';
+ globalThis.fetch=async url=>{
+  const path=String(url);
+  if(path.endsWith('/oauth/token'))return Response.json({access_token:'access',refresh_token:'refresh',expires_at:stamp()+21600});
+  if(path.includes('/athlete/activities'))return Response.json([1,2].map(id=>({...activity(id,'WeightTraining'),total_photo_count:1})));
+  if(path.includes('/photos?'))return Response.json([]);
+  const id=path.endsWith('/2')?2:1;
+  return Response.json({...activity(id,'WeightTraining'),total_photo_count:id===2?0:1,photos:{primary:{urls:{1200:stale}}}});
+ };
+ try {
+  const result=await(await handleStrava(request('/api/strava'),env,{})).json();
+  assert.equal(result.activities.length,2);
+  for(const item of result.activities){assert.equal(item.photo,null);assert.deepEqual(item.photos,[]);}
+ }finally{globalThis.fetch=original;}
 });
