@@ -149,3 +149,14 @@
 .thinking-out-loud .current-note{padding:22px 24px}
 .thinking-out-loud .current-note p{margin:0;color:var(--text);font-size:15px;line-height:1.8}
 @media(max-width:640px){.thinking-out-loud .current-note{padding:18px}}
+
+/* Keep the listening card compact and readable on narrow screens. */
+.spotify-copy{flex:1;overflow-wrap:anywhere}
+@media(max-width:640px){
+  #spotify .section-top{flex-direction:column;align-items:flex-start;gap:8px}
+  #spotify .section-top>a{text-align:left}
+  #spotify .spotify-card{min-height:0;align-items:center}
+  #spotify .spotify-copy h3{font-size:18px;line-height:1.4;margin:0}
+  #spotify .spotify-links{gap:6px 16px}
+  #spotify .spotify-links a{display:inline-flex;align-items:center;min-height:36px}
+}
