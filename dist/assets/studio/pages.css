@@ -99,3 +99,6 @@
 .about-page .volunteer-entry:last-child{padding-bottom:0}
 .about-page .volunteer-entry h3{font-size:18px;line-height:1.4;font-weight:500;margin:0 0 4px}
 .about-page .volunteer-entry p{font-size:15px;color:var(--muted);margin:0}
+
+.about-page .milestone .boxing-leadership{grid-column:2;margin-top:12px}
+@media(max-width:380px){.about-page .milestone .boxing-leadership{grid-column:1}}
