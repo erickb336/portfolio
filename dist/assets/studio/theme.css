@@ -146,4 +146,6 @@
 @media(max-width:480px){.work-volunteer-row{align-items:flex-start;flex-direction:column;gap:6px}}
 
 .thinking-out-loud .section-top{margin-bottom:12px}
-.thinking-out-loud>p{margin:0;color:var(--muted);font-size:15px;line-height:1.8}
+.thinking-out-loud .current-note{padding:22px 24px}
+.thinking-out-loud .current-note p{margin:0;color:var(--text);font-size:15px;line-height:1.8}
+@media(max-width:640px){.thinking-out-loud .current-note{padding:18px}}
