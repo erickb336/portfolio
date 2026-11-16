@@ -136,3 +136,11 @@
 .strava-photo-viewer img{display:block;max-width:100%;max-height:100%;object-fit:contain}
 .strava-photo-close{position:absolute;top:16px;right:20px;min-height:44px;padding:8px 16px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--text);font:inherit;cursor:pointer}
 .strava-photo-close:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+
+/* Volunteer roles are separate from paid work and use compact dated rows. */
+.work-volunteering .section-top{margin-bottom:12px}
+.work-volunteer-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0;border-top:1px solid var(--line)}
+.work-volunteer-row h3{font-size:15px;font-weight:500;line-height:1.4;margin:0 0 4px}
+.work-volunteer-row p{font-size:14px;color:var(--muted);margin:0}
+.volunteer-dates{font-size:12px;color:var(--muted);white-space:nowrap}
+@media(max-width:480px){.work-volunteer-row{align-items:flex-start;flex-direction:column;gap:6px}}
