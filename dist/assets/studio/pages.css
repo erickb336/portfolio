@@ -82,3 +82,20 @@
 }
 
 @media(min-width:1000px){.journal-page main.wrap{max-width:1120px}}
+
+/* Compact About spacing and simple volunteer rows. */
+.about-page .page-intro{padding:28px 0 20px}
+.about-page .page-intro>p{margin:10px 0 0}
+.about-page .section{padding:24px 0}
+.about-page .section-label{margin-bottom:16px}
+.about-page .section-content>p{margin-bottom:16px}
+.about-page .facts{margin-top:20px;padding-top:18px;gap:16px}
+.about-page .facts p{margin-bottom:0}
+.about-page #milestones .lead{margin-bottom:0}
+.about-page .milestone{padding:20px}
+.about-page .volunteer-list{display:grid;gap:0}
+.about-page .volunteer-entry{padding:14px 0;border-top:1px solid var(--line)}
+.about-page .volunteer-entry:first-child{padding-top:0;border-top:0}
+.about-page .volunteer-entry:last-child{padding-bottom:0}
+.about-page .volunteer-entry h3{font-size:18px;line-height:1.4;font-weight:500;margin:0 0 4px}
+.about-page .volunteer-entry p{font-size:15px;color:var(--muted);margin:0}
