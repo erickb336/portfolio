@@ -29,7 +29,7 @@
       const body = dialog.querySelector('.review-dialog-body');
       body.replaceChildren();
       const text = card.querySelector('.book-review').textContent.trim();
-      const paragraphs = text.replace('My takeaway', '\n\nMy takeaway').replace('On Earth, like in Hell,', '\n\nOn Earth, like in Hell,').split(/\n\s*\n/);
+      const paragraphs = text.replace(/My takeaway/i, match => '\n\n' + match).replace(/On Earth, like in Hell,/i, match => '\n\n' + match).split(/\n\s*\n/);
       paragraphs.forEach(text => { const p = document.createElement('p'); p.textContent = text; body.append(p); });
       document.body.classList.add('review-modal-open');
       dialog.showModal();
