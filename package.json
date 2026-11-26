@@ -5,13 +5,16 @@
   "scripts": {
     "test": "node --test tests/*.test.mjs",
     "db:generate": "drizzle-kit generate",
-    "build": "node scripts/render-bookshelf.mjs && node scripts/compile-workstation-schema.mjs && node scripts/prepare-worker-assets.mjs"
+    "build": "node scripts/render-bookshelf.mjs && node scripts/compile-workstation-schema.mjs && node scripts/prepare-worker-assets.mjs",
+    "deploy": "npm run build && wrangler deploy",
+    "dev": "npm run build && wrangler dev"
   },
   "devDependencies": {
     "ajv": "8.20.0",
     "drizzle-kit": "0.31.4",
     "drizzle-orm": "0.44.5",
-    "esbuild": "0.25.12"
+    "esbuild": "0.25.12",
+    "wrangler": "4.168.0"
   },
   "dependencies": {
     "leaflet": "^1.9.4"

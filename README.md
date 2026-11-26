@@ -51,6 +51,8 @@ dist/
 
 ## Publishing
 
+An independent Cloudflare deployment is being prepared. See [migration status and cutover steps](docs/cloudflare-migration.md). The production domain remains on Sites until the integrations are reconnected and verified.
+
 The production site is published through the existing OpenAI Sites project. Successful site publications are also committed and pushed to this repository’s `main` branch.
 
 Spotify credentials are stored as encrypted hosting secrets and are never committed to the repository.
