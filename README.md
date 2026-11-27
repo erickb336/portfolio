@@ -19,7 +19,7 @@ My personal website showcases my software engineering work, background, and inte
 - CSS with responsive layouts and light/dark themes
 - Vanilla JavaScript
 - A small Cloudflare Worker-compatible endpoint for Spotify activity
-- OpenAI Sites hosting
+- Cloudflare Workers hosting with Static Assets and D1
 
 ## Run locally
 
@@ -51,11 +51,17 @@ dist/
 
 ## Publishing
 
-An independent Cloudflare deployment is being prepared. See [migration status and cutover steps](docs/cloudflare-migration.md). The production domain remains on Sites until the integrations are reconnected and verified.
+Production is hosted directly in my Cloudflare account. OpenAI Sites is no longer part of the serving or deployment path. The old `.openai/hosting.json` is retained only as a historical record.
 
-The production site is published through the existing OpenAI Sites project. Successful site publications are also committed and pushed to this repository’s `main` branch.
+```sh
+npm ci
+npx wrangler login
+npm run deploy
+```
 
-Spotify credentials are stored as encrypted hosting secrets and are never committed to the repository.
+`wrangler.jsonc` declares the Worker, static assets, D1 binding, and `erickbenitez.com` custom domain. Apply new database migrations with `npx wrangler d1 migrations apply DB --remote` before deploying changes that need them. Commit source changes and push to the `github` remote's `main` branch after verification.
+
+Runtime credentials are Cloudflare Worker secrets and are never committed. See [migration details](docs/cloudflare-migration.md).
 
 ## Strava activity cards
 

@@ -28,5 +28,14 @@
       "enabled": true,
       "head_sampling_rate": 0.1
     }
+  },
+  "routes": [
+    {
+      "pattern": "erickbenitez.com",
+      "custom_domain": true
+    }
+  ],
+  "vars": {
+    "SPOTIFY_PROFILE_URL": "https://open.spotify.com/user/31l72ggdl353mhlixkugi4vxka2e"
   }
 }
